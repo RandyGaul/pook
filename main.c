@@ -6,11 +6,16 @@
 #define TINYGL_IMPL
 #include "tinygl.h"
 
+#include "lua\lua.h"
+#include "lua\lualib.h"
+#include "lua\lauxlib.h"
+
 #include <stdio.h>
 #include <float.h>
 
 GLFWwindow* window;
 float projection[ 16 ];
+lua_State* L;
 
 void ErrorCB( int error, const char* description )
 {
@@ -294,6 +299,51 @@ void* ReadFileToMemory( const char* path, int* size )
 	return data;
 }
 
+int ErrorFunc( lua_State* L )
+{
+	printf( "Lua error occurred: %s", lua_tostring( L, -1 ) );
+	lua_pop( L, 1 ); // pop the error string
+	return 0;
+}
+
+void StackDump( lua_State* L )
+{
+	int top = lua_gettop( L );
+	printf( "\nLua Stack Dump:\n" );
+	printf( "  Sizeof stack: %d\n", top );
+
+	for(int i = 1; i <= top; ++i)
+	{
+		int type = lua_type(L,i);
+		switch (type)
+		{
+		case LUA_TSTRING:  printf( "  %d: %s\n", i , lua_tostring(  L, i    ) ); break;
+		case LUA_TBOOLEAN: printf( "  %d: %d\n", i , lua_toboolean( L, i    ) ); break;
+		case LUA_TNUMBER:  printf( "  %d: %g\n", i , lua_tonumber(  L, i    ) ); break;
+		default:           printf( "  %d: %s\n", i , lua_typename(  L, type ) ); break;
+		}
+	}
+
+	printf( "  -->End stack dump.\n" );
+}
+
+void Dofile( lua_State* L, const char* name )
+{
+	if ( luaL_dofile( L, name ) )
+		ErrorFunc( L );
+}
+
+void Tick( lua_State* L )
+{
+	lua_pushcfunction( L , ErrorFunc ); // 1
+	lua_getglobal( L, "Tick" ); // 2
+	int arg_count = 0;
+	int error_func_index = -((int)(arg_count + 2));
+	int ret = lua_pcall( L, arg_count, 1, error_func_index );
+	lua_remove( L, lua_gettop( L ) - 1 ); // pop error function or error data
+	lua_pop( L, 1 ); // pop final nil
+}
+
 int main( )
 {
 	glfwSetErrorCallback( ErrorCB );
@@ -373,12 +423,26 @@ int main( )
 	tgSendMatrix( &simple, "u_mvp", mvp );
 	tgDeactivateShader( );
 
+	// init lua
+	L = luaL_newstate( );
+	luaL_openlibs( L );
+	Dofile( L, "tick.lua" );
+
 	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glfwPollEvents( );
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+		// WORKING HERE
+		// setup dt timer
+		// store renders in array, make lookup by string name
+		// make a push buffer for triangles
+		// bind PushTri to lua
+		// bind PushDrawCall to lua
+		// start doing some gfx from lua
+
+		Tick( L );
 		tgPushDrawCall( ctx, call );
 
 		tgFlush( ctx, PookSwapBuffers );
