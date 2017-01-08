@@ -6,5 +6,8 @@ varying vec4 v_normal;
 
 void main( )
 {
-	gl_FragColor = vec4( 0, 0, 0, 0 ) * dot( u_eye, v_normal );
+	//gl_FragColor = v_col * dot( u_eye, v_normal );
+	//gl_FragColor = u_eye;
+	//gl_FragColor = v_pos;
+	gl_FragColor = v_col;
 }

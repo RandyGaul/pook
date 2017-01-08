@@ -1,4 +1,4 @@
-uniform mat4 u_view;
+uniform mat4 u_mvp;
 
 attribute vec4 a_pos;
 attribute vec4 a_col;
@@ -12,6 +12,6 @@ void main( )
 {
 	v_col = a_col;
 	v_normal = a_normal;
-	v_pos = u_view * a_pos;
+	v_pos = u_mvp * a_pos;
 	gl_Position = v_pos;
 }

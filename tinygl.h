@@ -537,23 +537,24 @@ void tgSendF32( tgShader* s, char* uniform_name, uint32_t size, float* floats, u
 	TG_ASSERT( size == u->size );
 	TG_ASSERT( u->type == TG_FLOAT );
 
-	switch ( size )
+	switch ( count )
 	{
 	case 1:
-		glUniform1fv( u->location, count, floats );
+		glUniform1f( u->location, floats[ 0 ] );
 		break;
 
 	case 2:
-		glUniform2fv( u->location, count, floats );
+		glUniform2f( u->location, floats[ 0 ], floats[ 1 ] );
 		break;
 
 	case 3:
-		glUniform3fv( u->location, count, floats );
+		glUniform3f( u->location, floats[ 0 ], floats[ 1 ], floats[ 2 ] );
 		break;
 
 	case 4:
-		glUniform4fv( u->location, count, floats );
-		break;
+	{
+		glUniform4f( u->location, floats[ 0 ], floats[ 1 ], floats[ 2 ], 1.0f );
+	}	break;
 
 	default:
 		TG_ASSERT( 0 );
@@ -570,7 +571,6 @@ void tgSendMatrix( tgShader* s, char* uniform_name, float* floats )
 	TG_ASSERT( u->type == TG_FLOAT );
 
 	glUniformMatrix4fv( u->id, 1, 0, floats );
-	TG_PRINT_GL_ERRORS( );
 }
 
 void tgSendTexture( tgShader* s, char* uniform_name, uint32_t index )
@@ -773,7 +773,7 @@ void tgPrintGLErrors_internal( char* file, uint32_t line )
 		}
 
 		const char* str = gluErrorString( code );
-		printf( "OpenGL Error %s ( %u ): %u\n", last_slash, line, code );
+		printf( "OpenGL Error %s ( %u ): %u, %s\n", last_slash, line, code, str );
 	}
 }
 #endif

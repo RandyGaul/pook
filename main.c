@@ -10,7 +10,7 @@
 #include <float.h>
 
 GLFWwindow* window;
-float view[ 16 ];
+float projection[ 16 ];
 
 void ErrorCB( int error, const char* description )
 {
@@ -27,8 +27,8 @@ void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 void Reshape( GLFWwindow* window, int width, int height )
 {
 	GLfloat aspect = (GLfloat) height / (GLfloat) width;
-	float degree_85 = 1.48353f;
-	tgPerspective( view, degree_85, aspect, 0.1f, 10000.0f );
+	float fov = 1.48353f;
+	tgPerspective( projection, fov, aspect, 0.1f, 10000.0f );
 }
 
 void PookSwapBuffers( )
@@ -228,9 +228,9 @@ void LookAt( float* m, v3 eye, v3 center, v3 up )
 	m[ 10 ]= -front.z;
 	m[ 11 ]= 0;
 
-	m[ 12 ]= 0;
-	m[ 13 ]= 0;
-	m[ 14 ]= 0;
+	m[ 12 ]= -eye.x;
+	m[ 13 ]= -eye.y;
+	m[ 14 ]= -eye.z;
 	m[ 15 ]= 1.0f;
 }
 
@@ -336,11 +336,13 @@ int main( )
 	tgRenderable r;
 	tgShader simple;
 	tgMakeRenderable( &r, &vd );
-	const char* vs = (const char*)ReadFileToMemory( "simple.vs", 0 );
-	const char* ps = (const char*)ReadFileToMemory( "simple.ps", 0 );
+	char* vs = (char*)ReadFileToMemory( "simple.vs", 0 );
+	char* ps = (char*)ReadFileToMemory( "simple.ps", 0 );
 	TG_ASSERT( vs );
 	TG_ASSERT( ps );
 	tgLoadShader( &simple, vs, ps );
+	free( vs );
+	free( ps );
 	tgSetShader( &r, &simple );
 
 	Vertex verts[ 3 ];
@@ -353,20 +355,22 @@ int main( )
 	v[ 0 ].position = V3( 0, 1, 0 );
 	v[ 1 ].position = V3( -1, -1, 0 );
 	v[ 2 ].position = V3( 1, -1, 0 );
+	v3 n = norm( cross( sub( v[ 2 ].position, v[ 0 ].position ), sub( v[ 2 ].position, v[ 1 ].position ) ) );
 	for ( int i = 0; i < 3; ++i )
 	{
 		v[ i ].normal = V3( 0, 1.0f, 0 );
 		v[ i ].color = V3( 0.1f, 0.4f, 0.8f );
+		v[ i ].normal = n;
 	}
 
 	float cam[ 16 ];
-	LookAt( cam, V3( 0, 0, 0 ), V3( 0, 0, 20 ), V3( 0, 1, 0 ) );
+	LookAt( cam, V3( 0, 0, 5 ), V3( 0, 0, 0 ), V3( 0, 1, 0 ) );
 
-	m4Mul( view, cam, view );
+	float mvp[ 16 ];
+	m4Mul( projection, cam, mvp );
 
 	tgSetActiveShader( &simple );
-	m4Identity( view );
-	tgSendMatrix( &simple, "u_view", view );
+	tgSendMatrix( &simple, "u_mvp", mvp );
 	tgDeactivateShader( );
 	TG_PRINT_GL_ERRORS( );
 
@@ -379,6 +383,7 @@ int main( )
 		tgPushDrawCall( ctx, call );
 
 		tgFlush( ctx, PookSwapBuffers );
+		TG_PRINT_GL_ERRORS( );
 	}
 
 	tgFreeCtx( ctx );
