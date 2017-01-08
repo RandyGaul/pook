@@ -6,6 +6,9 @@
 #define TINYGL_IMPL
 #include "tinygl.h"
 
+#define TT_IMPLEMENTATION
+#include "tinytime.h"
+
 #include "lua\lua.h"
 #include "lua\lualib.h"
 #include "lua\lauxlib.h"
@@ -362,15 +365,25 @@ void Dofile( lua_State* L, const char* name )
 		ErrorFunc( L );
 }
 
-void Tick( lua_State* L )
+void pcall_setup( const char* func_name )
 {
 	lua_pushcfunction( L , ErrorFunc ); // 1
-	lua_getglobal( L, "Tick2" ); // 2
-	int arg_count = 0;
+	lua_getglobal( L, func_name ); // 2
+}
+
+void pcall_do( int arg_count )
+{
 	int error_func_index = -((int)(arg_count + 2));
 	int ret = lua_pcall( L, arg_count, 1, error_func_index );
 	lua_remove( L, lua_gettop( L ) - 1 ); // pop error function or error data
 	lua_pop( L, 1 ); // pop final nil
+}
+
+void Tick( lua_State* L, float dt )
+{
+	pcall_setup( "Tick" );
+	lua_pushnumber( L, (lua_Number)dt );
+	pcall_do( 1 );
 }
 
 int main( )
@@ -463,6 +476,8 @@ int main( )
 		glfwPollEvents( );
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+		float dt = ttTime( );
+
 		// WORKING HERE
 		// setup dt timer
 		// store renders in array, make lookup by string name
@@ -471,7 +486,8 @@ int main( )
 		// bind PushDrawCall to lua
 		// start doing some gfx from lua
 
-		Tick( L );
+		Tick( L, dt );
+
 		tgPushDrawCall( ctx, call );
 
 		tgFlush( ctx, PookSwapBuffers );

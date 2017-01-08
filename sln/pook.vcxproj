@@ -173,6 +173,7 @@
     <ClInclude Include="..\deps\lua\lvm.h" />
     <ClInclude Include="..\deps\lua\lzio.h" />
     <ClInclude Include="..\tinygl.h" />
+    <ClInclude Include="..\tinytime.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -89,5 +89,6 @@
     <ClInclude Include="..\deps\lua\lundump.h" />
     <ClInclude Include="..\deps\lua\lvm.h" />
     <ClInclude Include="..\deps\lua\lzio.h" />
+    <ClInclude Include="..\tinytime.h" />
   </ItemGroup>
 </Project>
