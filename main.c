@@ -299,12 +299,33 @@ void* ReadFileToMemory( const char* path, int* size )
 	return data;
 }
 
-int ErrorFunc( lua_State* L )
+void ErrorBox( const char *exp, const char *file, int line, const char *msg, ... )
 {
-	printf( "Lua error occurred: %s", lua_tostring( L, -1 ) );
-	lua_pop( L, 1 ); // pop the error string
-	return 0;
+	char buffer[ 2048 ];
+
+	// print out the file and line in visual studio format so the error can be
+	// double clicked in the output window file(line) : error
+	int offset = sprintf( buffer, "%s(%d) : ", file, line );
+	if( msg )
+	{
+		va_list args;
+		va_start(args, msg);
+		vsnprintf( buffer + offset, 2048, msg, args );
+		vfprintf( stderr, msg, args );
+		va_end(args);
+	}
+	else strcpy( buffer + offset, "No Error Message" );
+
+	fprintf( stderr, "%s\n", buffer );
+	MessageBoxA( 0, buffer, 0, 0 );
 }
+
+#define MSG_BOX( msg, ... ) \
+	do \
+	{ \
+		ErrorBox( NULL, __FILE__, __LINE__, msg, __VA_ARGS__ ); \
+		__debugbreak( ); \
+	} while( 0 )
 
 void StackDump( lua_State* L )
 {
@@ -327,6 +348,14 @@ void StackDump( lua_State* L )
 	printf( "  -->End stack dump.\n" );
 }
 
+int ErrorFunc( lua_State* L )
+{
+	const char* err_str = lua_tostring( L, -1 );
+	MSG_BOX( "Lua error occurred: %s", err_str );
+	lua_pop( L, 1 ); // pop the error string
+	return 0;
+}
+
 void Dofile( lua_State* L, const char* name )
 {
 	if ( luaL_dofile( L, name ) )
@@ -336,7 +365,7 @@ void Dofile( lua_State* L, const char* name )
 void Tick( lua_State* L )
 {
 	lua_pushcfunction( L , ErrorFunc ); // 1
-	lua_getglobal( L, "Tick" ); // 2
+	lua_getglobal( L, "Tick2" ); // 2
 	int arg_count = 0;
 	int error_func_index = -((int)(arg_count + 2));
 	int ret = lua_pcall( L, arg_count, 1, error_func_index );
