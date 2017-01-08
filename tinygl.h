@@ -110,12 +110,6 @@ void tgMakeRenderable( tgRenderable* r, tgVertexData* vd );
 
 // Must be called after tgMakeRenderable
 void tgSetShader( tgRenderable* r, tgShader* s );
-
-// WARNING: Messes with GL global state via glUnmapBuffer( GL_ARRAY_BUFFER ) and
-// glBindBuffer( GL_ARRAY_BUFFER, ... ), so call tgMap, fill in data, then call tgUnmap.
-void* tgMap( tgRenderable* r, uint32_t count );
-void tgUnmap( );
-
 void tgLoadShader( tgShader* s, const char* vertex, const char* pixel );
 void tgFreeShader( tgShader* s );
 
@@ -269,12 +263,15 @@ void tgMakeRenderable( tgRenderable* r, tgVertexData* vd )
 	r->state.key = 0;;
 
 	if ( vd->usage == GL_STATIC_DRAW )
+	{
 		r->buffer_count = 1;
-
-	else
-		r->buffer_count = 3;
+		r->need_new_sync = 1;
+	}
+	else r->buffer_count = 3;
 }
 
+// WARNING: Messes with GL global state via glUnmapBuffer( GL_ARRAY_BUFFER ) and
+// glBindBuffer( GL_ARRAY_BUFFER, ... ), so call tgMap, fill in data, then call tgUnmap.
 void* tgMap( tgRenderable* r, uint32_t count )
 {
 	// Cannot map a buffer when the buffer is too small
@@ -636,16 +633,29 @@ uint32_t tgGetGLEnum( uint32_t type )
 	}
 }
 
+void tgDoMap( tgDrawCall* call, tgRenderable* render )
+{
+	uint32_t count = call->vert_count;
+	void* driver_memory = tgMap( render, count );
+	memcpy( driver_memory, call->verts, render->data.vertex_stride * count );
+	tgUnmap( );
+}
+
 static void tgRender( tgDrawCall* call )
 {
 	tgRenderable* render = call->r;
 	uint32_t texture_count = call->texture_count;
 	uint32_t* textures = call->textures;
 
-	uint32_t count = call->vert_count;
-	void* driver_memory = tgMap( render, count );
-	memcpy( driver_memory, call->verts, render->data.vertex_stride * count );
-	tgUnmap( );
+	if ( render->data.usage == GL_STATIC_DRAW )
+	{
+		if ( render->need_new_sync )
+		{
+			render->need_new_sync = 0;
+			tgDoMap( call, render );
+		}
+	}
+	else tgDoMap( call, render );
 
 	tgVertexData* data = &render->data;
 	tgVertexAttribute* attributes = data->attributes;

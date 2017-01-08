@@ -322,13 +322,13 @@ int main( )
 
 	void* ctx = tgMakeCtx( 32 );
 
-	//glEnable( GL_CULL_FACE );
-	//glEnable( GL_DEPTH_TEST );
-	//glCullFace( GL_BACK );
-	//glFrontFace( GL_CCW );
+	glEnable( GL_CULL_FACE );
+	glEnable( GL_DEPTH_TEST );
+	glCullFace( GL_BACK );
+	glFrontFace( GL_CCW );
 
 	tgVertexData vd;
-	tgMakeVertexData( &vd, 1024 * 10, sizeof( Vertex ), GL_TRIANGLES, GL_STATIC_DRAW );
+	tgMakeVertexData( &vd, 3, sizeof( Vertex ), GL_TRIANGLES, GL_STATIC_DRAW );
 	tgAddAttribute( &vd, "a_pos", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, position ) );
 	tgAddAttribute( &vd, "a_col", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, color ) );
 	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
@@ -372,7 +372,6 @@ int main( )
 	tgSetActiveShader( &simple );
 	tgSendMatrix( &simple, "u_mvp", mvp );
 	tgDeactivateShader( );
-	TG_PRINT_GL_ERRORS( );
 
 	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
