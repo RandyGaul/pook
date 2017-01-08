@@ -1,0 +1,10 @@
+uniform vec4 u_eye;
+
+varying vec4 v_pos;
+varying vec4 v_col;
+varying vec4 v_normal;
+
+void main( )
+{
+	gl_FragColor = vec4( 0, 0, 0, 0 ) * dot( u_eye, v_normal );
+}
