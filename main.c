@@ -397,11 +397,17 @@ void pcall_do( int arg_count )
 	lua_pop( L, 1 ); // pop final nil
 }
 
-void Tick( lua_State* L, float dt )
+void Tick( lua_State* L, double time )
 {
 	pcall_setup( "Tick" );
-	lua_pushnumber( L, (lua_Number)dt );
+	lua_pushnumber( L, (lua_Number)time );
 	pcall_do( 1 );
+}
+
+void MakeMeshes( lua_State* L )
+{
+	pcall_setup( "MakeMeshes" );
+	pcall_do( 0 );
 }
 
 typedef struct
@@ -410,8 +416,15 @@ typedef struct
 	Vertex* verts;
 } Mesh;
 
+typedef struct
+{
+	tgRenderable r;
+	int count;
+	int capacity;
+	Vertex* verts;
+} DrawCall;
+
 #define MAX_MESHES 1024
-#define MAX_RENDERS 32
 #define MAX_DRAW_CALLS 1024
 typedef struct
 {
@@ -426,11 +439,8 @@ typedef struct
 
 	int last_render;
 	int render_count;
-	const char* render_names[ MAX_RENDERS ];
-	tgRenderable renders[ MAX_RENDERS ];
-
-	int call_count;
-	tgDrawCall calls[ MAX_DRAW_CALLS ];
+	const char* render_names[ MAX_DRAW_CALLS ];
+	DrawCall calls[ MAX_DRAW_CALLS ];
 } Meshes;
 
 Meshes meshes;
@@ -511,6 +521,20 @@ void Register_internal( lua_State *L, lua_CFunction func, const char* name )
 	lua_setglobal( L, name );
 }
 
+void PushTransformedVert( Vertex v, DrawCall* call )
+{
+	if ( call->count == call->capacity )
+	{
+		int new_cap = call->capacity * 2;
+		Vertex* new_verts = (Vertex*)malloc( sizeof( Vertex ) * new_cap );
+		memcpy( new_verts, call->verts, sizeof( Vertex ) * call->count );
+		free( call->verts );
+		call->capacity = new_cap;
+		call->verts = new_verts;
+	}
+	call->verts[ call->count++ ] = v;
+}
+
 int PushInstance( lua_State *L )
 {
 	LUA_ERROR_IF( L, lua_gettop( L ) != 4, "PushInstance expects 4 parameters, a string and 3 floats" );
@@ -546,12 +570,13 @@ int PushInstance( lua_State *L )
 
 	meshes.last_mesh = index;
 	Mesh* mesh = meshes.meshes + index;
+	DrawCall* call = meshes.calls + meshes.last_render;
 
 	for ( int i = 0; i < mesh->vert_count; ++i )
 	{
 		Vertex v = mesh->verts[ i ];
 		v.position = add( v.position, p );
-		PushVert( v );
+		PushTransformedVert( v, call );
 	}
 
 	return 0;
@@ -581,34 +606,33 @@ int FindRender( const char* name )
 	return index;
 }
 
-int SetRender( lua_State *L )
-{
-	LUA_ERROR_IF( L, lua_gettop( L ) != 1, "SetRender expects 1 parameter, a string" );
-	const char* name = luaL_checkstring( L, -1 );
-	lua_settop( L, 0 );
-	FindRender( name );
-	return 0;
-}
-
 // WORKING HERE
 // flush draw calls and free the temp verts
 int Flush( lua_State *L )
 {
-	LUA_ERROR_IF( L, lua_gettop( L ), "Flush expects no parameters" );
+	LUA_ERROR_IF( L, lua_gettop( L ) != 1, "SetRender expects 1 parameter, a string" );
+	const char* name = luaL_checkstring( L, -1 );
+	lua_settop( L, 0 );
+	int call_index = FindRender( name );
+	DrawCall* dc = meshes.calls + call_index;
 	tgDrawCall call;
 	call.texture_count = 0;
-	//call.r = &r;
-	//call.verts = verts;
-	//call.vert_count = 3;
-	//Vertex* v = (Vertex*)call.verts;
+	call.r = &dc->r;
+	call.verts = dc->verts;
+	call.vert_count = dc->count;
 	return 0;
 }
 
 void AddRender( tgRenderable* render, const char* name )
 {
-	ERROR_IF( meshes.render_count == MAX_RENDERS, "Hit MAX_RENDERS" );
+	ERROR_IF( meshes.render_count == MAX_DRAW_CALLS, "Hit MAX_RENDERS" );
 	meshes.render_names[ meshes.render_count ] = name;
-	meshes.renders[ meshes.render_count++ ] = *render;
+	DrawCall call;
+	memset( &call, 0, sizeof( call ) );
+	call.r = *render;
+	call.capacity = 1024;
+	call.verts = (Vertex*)malloc( sizeof( Vertex ) * 1024 );
+	meshes.calls[ meshes.render_count++ ] = call;
 }
 
 int main( )
@@ -645,7 +669,7 @@ int main( )
 	glFrontFace( GL_CCW );
 
 	tgVertexData vd;
-	tgMakeVertexData( &vd, 3, sizeof( Vertex ), GL_TRIANGLES, GL_DYNAMIC_DRAW );
+	tgMakeVertexData( &vd, 1024 * 10, sizeof( Vertex ), GL_TRIANGLES, GL_DYNAMIC_DRAW );
 	tgAddAttribute( &vd, "a_pos", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, position ) );
 	tgAddAttribute( &vd, "a_col", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, color ) );
 	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
@@ -680,17 +704,37 @@ int main( )
 	Register( L, PushMesh );
 	Register( L, PushVert_internal );
 	Register( L, PushInstance );
-	Register( L, SetRender );
+	Register( L, Flush );
 	InitMeshes( );
+	MakeMeshes( L );
 
 	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
+	double time = 0;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glfwPollEvents( );
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 		float dt = ttTime( );
-		Tick( L, dt );
+		Dofile( L, "tick.lua" );
+		time += dt;
+		Tick( L, time );
+
+		for ( int i = 0; i < meshes.render_count; ++i )
+		{
+			DrawCall* dc = meshes.calls + i;
+			if ( dc->count )
+			{
+				tgDrawCall call;
+				call.r = &dc->r;
+				call.texture_count = 0;
+				call.verts = dc->verts;
+				call.vert_count = dc->count;
+				call.verts = dc->verts;
+				tgPushDrawCall( ctx, call );
+				dc->count = 0;
+			}
+		}
 
 		tgFlush( ctx, PookSwapBuffers );
 		TG_PRINT_GL_ERRORS( );

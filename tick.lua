@@ -4,7 +4,16 @@ function PushVert( x, y, z, cx, cy, cz, nx, ny, nz )
 	PushVert_internal( x, y, z, cx, cy, cz, nx, ny, nz )
 end
 
-init = false
+function MakeMeshes( )
+	PushVert( 0, 1, 0, 0.1, 0.4, 0.8 )
+	PushVert( -1, -1, 0, 0.1, 0.4, 0.8 )
+	PushVert( 1, -1, 0, 0.1, 0.4, 0.8 )
+	PushMesh( "triangle" )
+	print( "pushing triangle mesh" )
+end
+
+s = math.sin
+c = math.cos
 
 function Tick( dt )
 	print( "called Tick" )
@@ -12,15 +21,10 @@ function Tick( dt )
 	
 	if not init then
 		init = true
-		PushVert( 0, 1, 0, 0.1, 0.4, 0.8 )
-		PushVert( -1, -1, 0, 0.1, 0.4, 0.8 )
-		PushVert( 1, -1, 0, 0.1, 0.4, 0.8 )
-		PushMesh( "triangle" )
 	end
 	
-	SetRender( "simple" )
 	for i = 0, 3 do
-		PushInstance( "triange", 0, i * 5, 0 )
+		PushInstance( "triangle", 0, i * c( dt ), i * s( dt ) )
 	end
-	Flush( )
+	Flush( "simple" )
 end

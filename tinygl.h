@@ -283,7 +283,7 @@ void* tgMap( tgRenderable* r, uint32_t count )
 	if ( newIndex > r->data.buffer_size )
 	{
 		// should never overflow a static buffer
-		TG_ASSERT( r->data.usage = GL_STATIC_DRAW );
+		TG_ASSERT( r->data.usage != GL_STATIC_DRAW );
 
 		++r->buffer_number;
 		r->buffer_number %= r->buffer_count;
