@@ -31,7 +31,6 @@ void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 		glfwSetWindowShouldClose( window, GLFW_TRUE );
 }
 
-
 void Reshape( GLFWwindow* window, int width, int height )
 {
 	GLfloat aspect = (GLfloat) height / (GLfloat) width;
@@ -330,6 +329,25 @@ void ErrorBox( const char *exp, const char *file, int line, const char *msg, ...
 		__debugbreak( ); \
 	} while( 0 )
 
+#define ERROR_IF( condition, msg, ... ) \
+	do \
+	{ \
+		if ( condition ) \
+		{ \
+			MSG_BOX( msg, __VA_ARGS__ ); \
+		} \
+	} while ( 0 )
+
+#define LUA_ERROR_IF( L, condition, msg, ... ) \
+	do \
+	{ \
+		if ( condition ) \
+		{ \
+			StackDump( L ); \
+			MSG_BOX( msg, __VA_ARGS__ ); \
+		} \
+	} while ( 0 )
+
 void StackDump( lua_State* L )
 {
 	int top = lua_gettop( L );
@@ -341,10 +359,10 @@ void StackDump( lua_State* L )
 		int type = lua_type(L,i);
 		switch (type)
 		{
-		case LUA_TSTRING:  printf( "  %d: %s\n", i , lua_tostring(  L, i    ) ); break;
-		case LUA_TBOOLEAN: printf( "  %d: %d\n", i , lua_toboolean( L, i    ) ); break;
-		case LUA_TNUMBER:  printf( "  %d: %g\n", i , lua_tonumber(  L, i    ) ); break;
-		default:           printf( "  %d: %s\n", i , lua_typename(  L, type ) ); break;
+		case LUA_TSTRING:  printf( "  %d: \"%s\"\n", i , lua_tostring(  L, i    ) ); break;
+		case LUA_TBOOLEAN: printf( "  %d: %d\n",     i , lua_toboolean( L, i    ) ); break;
+		case LUA_TNUMBER:  printf( "  %d: %g\n",     i , lua_tonumber(  L, i    ) ); break;
+		default:           printf( "  %d: %s\n",     i , lua_typename(  L, type ) ); break;
 		}
 	}
 
@@ -386,6 +404,213 @@ void Tick( lua_State* L, float dt )
 	pcall_do( 1 );
 }
 
+typedef struct
+{
+	int vert_count;
+	Vertex* verts;
+} Mesh;
+
+#define MAX_MESHES 1024
+#define MAX_RENDERS 32
+#define MAX_DRAW_CALLS 1024
+typedef struct
+{
+	int temp_count;
+	int temp_capacity;
+	Vertex* temp_verts;
+
+	int last_mesh;
+	int mesh_count;
+	const char* mesh_names[ MAX_MESHES ];
+	Mesh meshes[ MAX_MESHES ];
+
+	int last_render;
+	int render_count;
+	const char* render_names[ MAX_RENDERS ];
+	tgRenderable renders[ MAX_RENDERS ];
+
+	int call_count;
+	tgDrawCall calls[ MAX_DRAW_CALLS ];
+} Meshes;
+
+Meshes meshes;
+
+void InitMeshes( )
+{
+	meshes.temp_verts = (Vertex*)malloc( sizeof( Vertex ) * 1024 );
+	meshes.temp_capacity = 1024;
+}
+
+void FreeMeshes( )
+{
+	free( meshes.temp_verts );
+	for ( int i = 0; i < meshes.mesh_count; ++i )
+	{
+		free( (char*)meshes.mesh_names[ i ] );
+		free( meshes.meshes[ i ].verts );
+	}
+	memset( &meshes, 0, sizeof( meshes ) );
+}
+
+int PushMesh( lua_State *L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 1, "PushMesh expects 1 parameters, a string" );
+	ERROR_IF( meshes.mesh_count >= MAX_MESHES, "Hit MAX_MESHES limit" );
+	const char* name = luaL_checkstring( L, -1 );
+	lua_settop( L, 0 );
+	int i = meshes.mesh_count++;
+	Mesh* mesh = meshes.meshes + i;
+	mesh->vert_count = meshes.temp_count;
+	int size = sizeof( Vertex ) * mesh->vert_count;
+	mesh->verts = (Vertex*)malloc( size );
+	memcpy( mesh->verts, meshes.temp_verts, size );
+	meshes.mesh_names[ i ] = strdup( name );
+	meshes.temp_count = 0;
+	return 0;
+}
+
+void PushVert( Vertex v )
+{
+	if ( meshes.temp_count == meshes.temp_capacity )
+	{
+		int new_cap = meshes.temp_capacity * 2;
+		Vertex* new_verts = (Vertex*)malloc( sizeof( Vertex ) * new_cap );
+		memcpy( new_verts, meshes.temp_verts, sizeof( Vertex ) * meshes.temp_count );
+		free( meshes.temp_verts );
+		meshes.temp_capacity = new_cap;
+		meshes.temp_verts = new_verts;
+	}
+	meshes.temp_verts[ meshes.temp_count++ ] = v;
+}
+
+int PushVert_internal( lua_State *L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 9, "PushVert_internal expects 9 parameters, all floats" );
+	float x = (float)luaL_checknumber( L, -9 );
+	float y = (float)luaL_checknumber( L, -8 );
+	float z = (float)luaL_checknumber( L, -7 );
+	float cx = (float)luaL_checknumber( L, -6 );
+	float cy = (float)luaL_checknumber( L, -5 );
+	float cz = (float)luaL_checknumber( L, -4 );
+	float nx = (float)luaL_checknumber( L, -3 );
+	float ny = (float)luaL_checknumber( L, -2 );
+	float nz = (float)luaL_checknumber( L, -1 );
+	lua_settop( L, 0 );
+	Vertex v;
+	v.position = V3( x, y, z );
+	v.color = V3( cx, cy, cz );
+	v.normal = V3( nx, ny, nz );
+	PushVert( v );
+	return 0;
+}
+
+#define Register( L, func ) Register_internal( L, func, #func )
+void Register_internal( lua_State *L, lua_CFunction func, const char* name )
+{
+	lua_pushcfunction( L, func );
+	lua_setglobal( L, name );
+}
+
+int PushInstance( lua_State *L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 4, "PushInstance expects 4 parameters, a string and 3 floats" );
+	const char* name = luaL_checkstring( L, -4 );
+	float x = (float)luaL_checknumber( L, -3 );
+	float y = (float)luaL_checknumber( L, -2 );
+	float z = (float)luaL_checknumber( L, -1 );
+	lua_settop( L, 0 );
+	v3 p = V3( x, y, z );
+
+	int index = meshes.last_mesh;
+	int found = 0;
+
+	if ( !strcmp( meshes.mesh_names[ index ], name ) ) found = 1;
+	else
+	{
+		for ( int i = 0; i < meshes.mesh_count; ++i )
+		{
+			if ( !strcmp( meshes.mesh_names[ i ], name ) )
+			{
+				index = i;
+				found = 1;
+				break;
+			}
+		}
+	}
+
+	if ( !found )
+	{
+		ERROR_IF( 0, "SetRender could not find %s", name );
+		return 0;
+	}
+
+	meshes.last_mesh = index;
+	Mesh* mesh = meshes.meshes + index;
+
+	for ( int i = 0; i < mesh->vert_count; ++i )
+	{
+		Vertex v = mesh->verts[ i ];
+		v.position = add( v.position, p );
+		PushVert( v );
+	}
+
+	return 0;
+}
+
+int FindRender( const char* name )
+{
+	int index = meshes.last_render;
+	int found = 0;
+
+	if ( !strcmp( meshes.render_names[ index ], name ) ) found = 1;
+	else
+	{
+		for ( int i = 0; i < meshes.render_count; ++i )
+		{
+			if ( !strcmp( meshes.render_names[ i ], name ) )
+			{
+				index = i;
+				found = 1;
+				break;
+			}
+		}
+	}
+
+	if ( !found ) ERROR_IF( 0, "SetRender could not find %s", name );
+	meshes.last_render = index;
+	return index;
+}
+
+int SetRender( lua_State *L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 1, "SetRender expects 1 parameter, a string" );
+	const char* name = luaL_checkstring( L, -1 );
+	lua_settop( L, 0 );
+	FindRender( name );
+	return 0;
+}
+
+// WORKING HERE
+// flush draw calls and free the temp verts
+int Flush( lua_State *L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ), "Flush expects no parameters" );
+	tgDrawCall call;
+	call.texture_count = 0;
+	//call.r = &r;
+	//call.verts = verts;
+	//call.vert_count = 3;
+	//Vertex* v = (Vertex*)call.verts;
+	return 0;
+}
+
+void AddRender( tgRenderable* render, const char* name )
+{
+	ERROR_IF( meshes.render_count == MAX_RENDERS, "Hit MAX_RENDERS" );
+	meshes.render_names[ meshes.render_count ] = name;
+	meshes.renders[ meshes.render_count++ ] = *render;
+}
+
 int main( )
 {
 	glfwSetErrorCallback( ErrorCB );
@@ -420,7 +645,7 @@ int main( )
 	glFrontFace( GL_CCW );
 
 	tgVertexData vd;
-	tgMakeVertexData( &vd, 3, sizeof( Vertex ), GL_TRIANGLES, GL_STATIC_DRAW );
+	tgMakeVertexData( &vd, 3, sizeof( Vertex ), GL_TRIANGLES, GL_DYNAMIC_DRAW );
 	tgAddAttribute( &vd, "a_pos", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, position ) );
 	tgAddAttribute( &vd, "a_col", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, color ) );
 	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
@@ -436,24 +661,7 @@ int main( )
 	free( vs );
 	free( ps );
 	tgSetShader( &r, &simple );
-
-	Vertex verts[ 3 ];
-	tgDrawCall call;
-	call.texture_count = 0;
-	call.r = &r;
-	call.verts = verts;
-	call.vert_count = 3;
-	Vertex* v = (Vertex*)call.verts;
-	v[ 0 ].position = V3( 0, 1, 0 );
-	v[ 1 ].position = V3( -1, -1, 0 );
-	v[ 2 ].position = V3( 1, -1, 0 );
-	v3 n = norm( cross( sub( v[ 2 ].position, v[ 0 ].position ), sub( v[ 2 ].position, v[ 1 ].position ) ) );
-	for ( int i = 0; i < 3; ++i )
-	{
-		v[ i ].normal = V3( 0, 1.0f, 0 );
-		v[ i ].color = V3( 0.1f, 0.4f, 0.8f );
-		v[ i ].normal = n;
-	}
+	AddRender( &r, "simple" );
 
 	float cam[ 16 ];
 	LookAt( cam, V3( 0, 0, 5 ), V3( 0, 0, 0 ), V3( 0, 1, 0 ) );
@@ -469,6 +677,11 @@ int main( )
 	L = luaL_newstate( );
 	luaL_openlibs( L );
 	Dofile( L, "tick.lua" );
+	Register( L, PushMesh );
+	Register( L, PushVert_internal );
+	Register( L, PushInstance );
+	Register( L, SetRender );
+	InitMeshes( );
 
 	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
@@ -477,23 +690,14 @@ int main( )
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 		float dt = ttTime( );
-
-		// WORKING HERE
-		// setup dt timer
-		// store renders in array, make lookup by string name
-		// make a push buffer for triangles
-		// bind PushTri to lua
-		// bind PushDrawCall to lua
-		// start doing some gfx from lua
-
 		Tick( L, dt );
-
-		tgPushDrawCall( ctx, call );
 
 		tgFlush( ctx, PookSwapBuffers );
 		TG_PRINT_GL_ERRORS( );
 	}
 
+	lua_close( L );
+	FreeMeshes( );
 	tgFreeCtx( ctx );
 	glfwDestroyWindow( window );
 	glfwTerminate( );
