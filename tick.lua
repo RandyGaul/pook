@@ -6,8 +6,8 @@ end
 
 function MakeMeshes( )
 	PushVert( 0, 1, 0, 0.1, 0.4, 0.8 )
-	PushVert( -1, -1, 0, 0.1, 0.4, 0.8 )
-	PushVert( 1, -1, 0, 0.1, 0.4, 0.8 )
+	PushVert( -1, -1, 0, 0.5, 0.2, 0.4 )
+	PushVert( 1, -1, 0, 0.25, 0.1, 0.2 )
 	PushMesh( "triangle" )
 	print( "pushing triangle mesh" )
 end
