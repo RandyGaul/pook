@@ -18,7 +18,7 @@ function MakeMeshes( )
 end
 
 function Tick( dt_param )
-	dt = dt + dt_param
+	dt = math.fmod( dt + dt_param, 3.14159265359 * 2 )
 	dofile( "main.lua" )
 	PromoteKeys( )
 end
