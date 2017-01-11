@@ -25,10 +25,18 @@ void ErrorCB( int error, const char* description )
 	fprintf( stderr, "Error: %s\n", description );
 }
 
+void pcall_setup( const char* func_name );
+void pcall_do( int arg_count );
+
 void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 {
 	if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
 		glfwSetWindowShouldClose( window, GLFW_TRUE );
+
+	pcall_setup( "SetKey" );
+	lua_pushnumber( L, (lua_Number)key );
+	lua_pushnumber( L, (lua_Number)action );
+	pcall_do( 2 );
 }
 
 void Reshape( GLFWwindow* window, int width, int height )
@@ -326,7 +334,6 @@ void ErrorBox( const char *exp, const char *file, int line, const char *msg, ...
 	do \
 	{ \
 		ErrorBox( NULL, __FILE__, __LINE__, msg, __VA_ARGS__ ); \
-		__debugbreak( ); \
 	} while( 0 )
 
 #define ERROR_IF( condition, msg, ... ) \
@@ -397,7 +404,7 @@ void pcall_do( int arg_count )
 	lua_pop( L, 1 ); // pop final nil
 }
 
-void Tick( lua_State* L, double time )
+void Tick( lua_State* L, float time )
 {
 	pcall_setup( "Tick" );
 	lua_pushnumber( L, (lua_Number)time );
@@ -535,53 +542,6 @@ void PushTransformedVert( Vertex v, DrawCall* call )
 	call->verts[ call->count++ ] = v;
 }
 
-int PushInstance( lua_State *L )
-{
-	LUA_ERROR_IF( L, lua_gettop( L ) != 4, "PushInstance expects 4 parameters, a string and 3 floats" );
-	const char* name = luaL_checkstring( L, -4 );
-	float x = (float)luaL_checknumber( L, -3 );
-	float y = (float)luaL_checknumber( L, -2 );
-	float z = (float)luaL_checknumber( L, -1 );
-	lua_settop( L, 0 );
-	v3 p = V3( x, y, z );
-
-	int index = meshes.last_mesh;
-	int found = 0;
-
-	if ( !strcmp( meshes.mesh_names[ index ], name ) ) found = 1;
-	else
-	{
-		for ( int i = 0; i < meshes.mesh_count; ++i )
-		{
-			if ( !strcmp( meshes.mesh_names[ i ], name ) )
-			{
-				index = i;
-				found = 1;
-				break;
-			}
-		}
-	}
-
-	if ( !found )
-	{
-		ERROR_IF( 0, "SetRender could not find %s", name );
-		return 0;
-	}
-
-	meshes.last_mesh = index;
-	Mesh* mesh = meshes.meshes + index;
-	DrawCall* call = meshes.calls + meshes.last_render;
-
-	for ( int i = 0; i < mesh->vert_count; ++i )
-	{
-		Vertex v = mesh->verts[ i ];
-		v.position = add( v.position, p );
-		PushTransformedVert( v, call );
-	}
-
-	return 0;
-}
-
 int FindRender( const char* name )
 {
 	int index = meshes.last_render;
@@ -606,8 +566,54 @@ int FindRender( const char* name )
 	return index;
 }
 
-// WORKING HERE
-// flush draw calls and free the temp verts
+int PushInstance( lua_State *L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 5, "PushInstance expects 5 parameters, two strings and 3 floats" );
+	const char* render_name = luaL_checkstring( L, -5 );
+	const char* mesh_name = luaL_checkstring( L, -4 );
+	float x = (float)luaL_checknumber( L, -3 );
+	float y = (float)luaL_checknumber( L, -2 );
+	float z = (float)luaL_checknumber( L, -1 );
+	lua_settop( L, 0 );
+	v3 p = V3( x, y, z );
+
+	int index = meshes.last_mesh;
+	int found = 0;
+
+	if ( !strcmp( meshes.mesh_names[ index ], mesh_name ) ) found = 1;
+	else
+	{
+		for ( int i = 0; i < meshes.mesh_count; ++i )
+		{
+			if ( !strcmp( meshes.mesh_names[ i ], mesh_name ) )
+			{
+				index = i;
+				found = 1;
+				break;
+			}
+		}
+	}
+
+	if ( !found )
+	{
+		ERROR_IF( 0, "SetRender could not find %s", mesh_name );
+		return 0;
+	}
+
+	meshes.last_mesh = index;
+	Mesh* mesh = meshes.meshes + index;
+	DrawCall* call = meshes.calls + FindRender( render_name );
+
+	for ( int i = 0; i < mesh->vert_count; ++i )
+	{
+		Vertex v = mesh->verts[ i ];
+		v.position = add( v.position, p );
+		PushTransformedVert( v, call );
+	}
+
+	return 0;
+}
+
 int Flush( lua_State *L )
 {
 	LUA_ERROR_IF( L, lua_gettop( L ) != 1, "SetRender expects 1 parameter, a string" );
@@ -709,16 +715,13 @@ int main( )
 	MakeMeshes( L );
 
 	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
-	double time = 0;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glfwPollEvents( );
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 		float dt = ttTime( );
-		Dofile( L, "tick.lua" );
-		time += dt;
-		Tick( L, time );
+		Tick( L, dt );
 
 		for ( int i = 0; i < meshes.render_count; ++i )
 		{
