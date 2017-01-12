@@ -3,6 +3,7 @@ dofile( "input.lua" )
 s = math.sin
 c = math.cos
 dt = 0
+t = 0
 
 function PushVert( x, y, z, cx, cy, cz, nx, ny, nz )
 	cx = cx or 1; cy = cy or 1; cz = cz or 1
@@ -18,7 +19,8 @@ function MakeMeshes( )
 end
 
 function Tick( dt_param )
-	dt = math.fmod( dt + dt_param, 3.14159265359 * 2 )
+	dt = dt_param
+	t = math.fmod( t + dt_param, 3.14159265359 * 2 )
 	dofile( "main.lua" )
 	PromoteKeys( )
 end

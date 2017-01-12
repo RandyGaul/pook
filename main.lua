@@ -3,6 +3,6 @@ if KeyPressed( 'a' ) then
 end
 
 for i = 0, 3 do
-	PushInstance( "simple", "triangle", i * s( dt * 2 ) * 0.5, i * c( dt ), i * s( dt ) )
+	PushInstance( "simple", "triangle", i * s( t * 2 ) * 0.5, i * c( t ), i * s( t ) )
 end
 Flush( "simple" )
