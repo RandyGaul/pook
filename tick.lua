@@ -1,4 +1,5 @@
 dofile( "input.lua" )
+local ObjLoader = require("parser")
 
 s = math.sin
 c = math.cos
@@ -12,10 +13,23 @@ function PushVert( x, y, z, cx, cy, cz, nx, ny, nz )
 end
 
 function MakeMeshes( )
-	PushVert( 0, 1, 0, 0.1, 0.4, 0.8 )
-	PushVert( -1, -1, 0, 0.5, 0.2, 0.4 )
-	PushVert( 1, -1, 0, 0.25, 0.1, 0.2 )
-	PushMesh( "triangle" )
+	local cowVerts = ObjLoader.getVerts("models/cow.obj")
+	GenerateTriangleMesh(cowVerts.triangleVerts)
+end
+
+function GenerateTriangleMesh(triangleVerts)
+	for i, j in ipairs(triangleVerts) do
+		if i % 3 == 0 then
+			PushVert(j[1], j[2], j[3], 1, 0.4, 0.8)
+		end
+		if i % 3 == 1 then
+			PushVert(j[1], j[2], j[3], 0.5, 1, 0.4)
+		end
+		if i % 3 == 2 then
+			PushVert(j[1], j[2], j[3], 0.25, 0.1, 1)
+		end
+	end
+	PushMesh("triangle")
 end
 
 function Tick( dt_param )
