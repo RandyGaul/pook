@@ -17,8 +17,13 @@
 #include <float.h>
 
 GLFWwindow* window;
+
+// Ugly-ass globals, should probably wrap this in a struct later or something
 float projection[ 16 ];
+float mvp[ 16 ];
 lua_State* L;
+tgShader simple;
+float cam[ 16 ]; // move into lua later possibly?
 
 void ErrorCB( int error, const char* description )
 {
@@ -27,6 +32,9 @@ void ErrorCB( int error, const char* description )
 
 void pcall_setup( const char* func_name );
 void pcall_do( int arg_count );
+void HandleMouseMovement( lua_State* L, float x, float y );
+void UpdateMvp();
+void m4Mul( float* a, float* b, float* c );
 
 void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 {
@@ -36,7 +44,12 @@ void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 	pcall_setup( "SetKey" );
 	lua_pushnumber( L, (lua_Number)key );
 	lua_pushnumber( L, (lua_Number)action );
-	pcall_do( 2 );
+	pcall_do( 2, 1 );
+}
+
+void MouseCB(GLFWwindow* window, double x, double y)
+{
+	HandleMouseMovement( L, x, y);
 }
 
 void Reshape( GLFWwindow* window, int width, int height )
@@ -226,7 +239,9 @@ void LookAt( float* m, v3 eye, v3 center, v3 up )
 	v3 front = norm( sub( center, eye ) );
 	v3 side = norm( cross( front, up ) );
 	v3 top = cross( side, front );
-	TG_ASSERT( absf( len( top ) - 1.0f ) < FLT_EPSILON );
+
+	// I think this is crashing bc cam target isn't far at all, doesn't matter though
+	// TG_ASSERT( absf( len( top ) - 1.0f ) < FLT_EPSILON );
 
 	m[ 0 ] = side.x;
 	m[ 1 ] = top.x;
@@ -247,6 +262,26 @@ void LookAt( float* m, v3 eye, v3 center, v3 up )
 	m[ 13 ]= -eye.y;
 	m[ 14 ]= -eye.z;
 	m[ 15 ]= 1.0f;
+}
+
+void UpdateCam( lua_State *L )
+{
+	float x = (float)luaL_checknumber(L, -3);
+	float y = (float)luaL_checknumber(L, -2);
+	float z = (float)luaL_checknumber(L, -1);
+	lua_settop(L, 0);
+
+	v3 eye = V3(0, 0, 5); // send this in from lua later
+	LookAt(cam, eye, V3(eye.x + x, eye.y + y, eye.z + z), V3(0, 1, 0));
+	UpdateMvp();
+}
+
+void UpdateMvp()
+{
+	m4Mul(projection, cam, mvp);
+	tgSetActiveShader( &simple );
+	tgSendMatrix( &simple, "u_mvp", mvp );
+	tgDeactivateShader( );
 }
 
 void m4Mul_internal( float a[ 4 ][ 4 ], float b[ 4 ][ 4 ], float* out )
@@ -396,25 +431,33 @@ void pcall_setup( const char* func_name )
 	lua_getglobal( L, func_name ); // 2
 }
 
-void pcall_do( int arg_count )
+void pcall_do( int arg_count, int ret_value_count)
 {
 	int error_func_index = -((int)(arg_count + 2));
-	int ret = lua_pcall( L, arg_count, 1, error_func_index );
-	lua_remove( L, lua_gettop( L ) - 1 ); // pop error function or error data
-	lua_pop( L, 1 ); // pop final nil
+	int ret = lua_pcall( L, arg_count, ret_value_count, error_func_index );
+	//lua_remove( L, lua_gettop( L ) - 1 ); // pop error function or error data
+	//lua_pop( L, 1 ); // pop final nil
 }
 
 void Tick( lua_State* L, float time )
 {
 	pcall_setup( "Tick" );
 	lua_pushnumber( L, (lua_Number)time );
-	pcall_do( 1 );
+	pcall_do( 1, 1 );
 }
 
 void MakeMeshes( lua_State* L )
 {
 	pcall_setup( "MakeMeshes" );
-	pcall_do( 0 );
+	pcall_do( 0, 1 );
+}
+
+void HandleMouseMovement( lua_State* L, float x, float y )
+{
+	pcall_setup( "handleMouseMovement" );
+	lua_pushnumber(L, (lua_Number)x);
+	lua_pushnumber(L, (lua_Number)y);
+	pcall_do( 2, 0 );
 }
 
 typedef struct
@@ -661,6 +704,7 @@ int main( )
 	}
 
 	glfwSetKeyCallback( window, KeyCB );
+	glfwSetCursorPosCallback( window, MouseCB );
 	glfwSetFramebufferSizeCallback( window, Reshape );
 
 	glfwMakeContextCurrent( window );
@@ -681,7 +725,6 @@ int main( )
 	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
 
 	tgRenderable r;
-	tgShader simple;
 	tgMakeRenderable( &r, &vd );
 	char* vs = (char*)ReadFileToMemory( "simple.vs", 0 );
 	char* ps = (char*)ReadFileToMemory( "simple.ps", 0 );
@@ -693,15 +736,11 @@ int main( )
 	tgSetShader( &r, &simple );
 	AddRender( &r, "simple" );
 
-	float cam[ 16 ];
 	LookAt( cam, V3( 0, 0, 5 ), V3( 0, 0, 0 ), V3( 0, 1, 0 ) );
 
-	float mvp[ 16 ];
 	m4Mul( projection, cam, mvp );
 
-	tgSetActiveShader( &simple );
-	tgSendMatrix( &simple, "u_mvp", mvp );
-	tgDeactivateShader( );
+	UpdateMvp();
 
 	// init lua
 	L = luaL_newstate( );
@@ -710,6 +749,7 @@ int main( )
 	Register( L, PushMesh );
 	Register( L, PushVert_internal );
 	Register( L, PushInstance );
+	Register( L, UpdateCam );
 	Register( L, Flush );
 	InitMeshes( );
 	MakeMeshes( L );

@@ -1,5 +1,6 @@
-dofile( "input.lua" )
 local ObjLoader = require("parser")
+require( "input" )
+require("cam")
 
 s = math.sin
 c = math.cos
