@@ -1,4 +1,3 @@
-
 if KeyPressed( 'a' ) then
 	print( "asdfasdf" )
 end

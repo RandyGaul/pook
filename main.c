@@ -18,12 +18,13 @@
 
 GLFWwindow* window;
 
-// Ugly-ass globals, should probably wrap this in a struct later or something
+// Same MVP being used for every single object for now.
 float projection[ 16 ];
 float mvp[ 16 ];
-lua_State* L;
+float cam[ 16 ];
 tgShader simple;
-float cam[ 16 ]; // move into lua later possibly?
+
+lua_State* L;
 
 void ErrorCB( int error, const char* description )
 {
@@ -414,7 +415,7 @@ void StackDump( lua_State* L )
 int ErrorFunc( lua_State* L )
 {
 	const char* err_str = lua_tostring( L, -1 );
-	MSG_BOX( "Lua error occurred: %s", err_str );
+	printf( "Lua error occurred: %s\n", err_str );
 	lua_pop( L, 1 ); // pop the error string
 	return 0;
 }
@@ -435,8 +436,13 @@ void pcall_do( int arg_count, int ret_value_count)
 {
 	int error_func_index = -((int)(arg_count + 2));
 	int ret = lua_pcall( L, arg_count, ret_value_count, error_func_index );
-	//lua_remove( L, lua_gettop( L ) - 1 ); // pop error function or error data
-	//lua_pop( L, 1 ); // pop final nil
+
+	if (ret != 0)
+	{
+		printf("you done fucked up son. %s\n", lua_tostring(L, -1));
+	}
+
+	lua_settop(L, 0);
 }
 
 void Tick( lua_State* L, float time )
@@ -726,8 +732,8 @@ int main( )
 
 	tgRenderable r;
 	tgMakeRenderable( &r, &vd );
-	char* vs = (char*)ReadFileToMemory( "simple.vs", 0 );
-	char* ps = (char*)ReadFileToMemory( "simple.ps", 0 );
+	char* vs = (char*)ReadFileToMemory( "assets/shaders/simple.vs", 0 );
+	char* ps = (char*)ReadFileToMemory( "assets/shaders/simple.ps", 0 );
 	TG_ASSERT( vs );
 	TG_ASSERT( ps );
 	tgLoadShader( &simple, vs, ps );
@@ -745,7 +751,7 @@ int main( )
 	// init lua
 	L = luaL_newstate( );
 	luaL_openlibs( L );
-	Dofile( L, "tick.lua" );
+	Dofile( L, "src/core/init.lua" );
 	Register( L, PushMesh );
 	Register( L, PushVert_internal );
 	Register( L, PushInstance );
