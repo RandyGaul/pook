@@ -1,8 +1,12 @@
-local prevX, prevY
-local accumulatedYaw, accumulatedPitch = 0, 0
-local sensitivity = .3
-local maxAbsDeg = 180
-local up = {x = 0, y = 1, z = 0}
+-- find a better way of preventing the constant reloading of the file from resetting all state
+if not camInitialized then
+	prevX, prevY = nil, nil
+	accumulatedYaw, accumulatedPitch = 0, 0
+	sensitivity = .3
+	maxAbsDeg = 180
+	up = {x = 0, y = 1, z = 0}
+end
+camInitialized = true
 
 local function clampDeg(deg)
 	if deg < -maxAbsDeg then

@@ -1,3 +1,7 @@
+dofile("src/util/fileloader.lua")
+
+loadfiles()
+
 if KeyPressed( 'a' ) then
 	print( "asdfasdf" )
 end
