@@ -17,7 +17,7 @@ function ObjectPooler:new(initialSize, maxSize, growthAmount, constructor, ...)
 	self.constructor = constructor
 	self.initialArgs = {...}
 	for i = 1, initialSize do
-		table.insert(self.stackPool, constructor(...))
+		table.insert(self.stackPool, self:generateObj())
 	end
 end
 
@@ -25,12 +25,18 @@ function ObjectPooler:get(...)
 	if #self.stackPool == 0 then
 		local numToAdd = math.min(self.growthAmount, self.maxSize - self.currentSize)
 		for i = 1, numToAdd do
-			table.insert(self.stackPool, self.constructor(unpack(self.initialArgs)))
+			table.insert(self.stackPool, self:generateObj())
 		end
 		self.currentSize = self.currentSize + numToAdd
 	end
 
 	return table.remove(self.stackPool)
+end
+
+function ObjectPooler:generateObj()
+	local obj = self.constructor(table.unpack(self.initialArgs))
+	table.insert(world, obj)
+	return obj
 end
 
 function ObjectPooler:recycle(obj)

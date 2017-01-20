@@ -5,8 +5,9 @@ function PushVert( x, y, z, cx, cy, cz, nx, ny, nz )
 end
 
 function MakeMeshes( )
-	local cowVerts = ObjLoader.getVerts("assets/models/cow.obj")
-	GenerateTriangleMesh(cowVerts.triangleVerts)
+	for i, v in pairs(world) do
+		v:generateMesh()
+	end
 end
 
 function GenerateTriangleMesh(triangleVerts)

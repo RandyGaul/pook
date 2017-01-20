@@ -1,11 +1,12 @@
 dofile("src/util/fileloader.lua")
 
-loadfiles()
-
 if KeyPressed( 'a' ) then
 	print( "asdfasdf" )
 end
 
-PushInstance( "simple", "triangle", 0, 0, 0)
+for i, v in pairs(world) do
+	v:render()
+	v:update()
+end
 
 Flush( "simple" )

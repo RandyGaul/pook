@@ -1,6 +1,12 @@
 local ObjLoader = {}
 
+VertCache = {}
+
 local function loadVerts(filename)
+	if VertCache[filename] ~= nil then
+		return VertCache[filename]
+	end
+
 	local verts = {}
 	io.input(filename)
 	for line in io.lines() do
@@ -14,6 +20,8 @@ local function loadVerts(filename)
 			table.insert(verts, vert)
 		end
 	end
+
+	VertCache[filename] = verts
 	return verts
 end
 

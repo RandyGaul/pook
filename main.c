@@ -725,7 +725,7 @@ int main( )
 	glFrontFace( GL_CCW );
 
 	tgVertexData vd;
-	tgMakeVertexData( &vd, 1024 * 50, sizeof( Vertex ), GL_TRIANGLES, GL_DYNAMIC_DRAW );
+	tgMakeVertexData( &vd, 1024 * 1024, sizeof( Vertex ), GL_TRIANGLES, GL_DYNAMIC_DRAW );
 	tgAddAttribute( &vd, "a_pos", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, position ) );
 	tgAddAttribute( &vd, "a_col", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, color ) );
 	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
