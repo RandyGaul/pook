@@ -2,11 +2,12 @@
 if not camInitialized then
 	prevX, prevY = nil, nil
 	accumulatedYaw, accumulatedPitch = 0, 0
-	sensitivity = .3
-	maxAbsDeg = 180
-	up = {x = 0, y = 1, z = 0}
 end
 camInitialized = true
+
+sensitivity = .3
+maxAbsDeg = 180
+up = {x = 0, y = 1, z = 0}
 
 local function clampDeg(deg)
 	if deg < -maxAbsDeg then
