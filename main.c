@@ -86,6 +86,7 @@ void UpdateMvp();
 void m4Mul( float* a, float* b, float* c );
 int FindRender( const char* name );
 void PushTransformedVert( Vertex v, DrawCall* call );
+int FindMesh(const char* name);
 
 void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 {
@@ -574,7 +575,8 @@ int PushMesh( lua_State *L )
 	ERROR_IF( meshes.mesh_count >= MAX_MESHES, "Hit MAX_MESHES limit" );
 	const char* name = luaL_checkstring( L, -1 );
 	lua_settop( L, 0 );
-	int i = meshes.mesh_count++;
+	int i = FindMesh(name);
+	i = i != -1 ? i : meshes.mesh_count++;
 	Mesh* mesh = meshes.meshes + i;
 	mesh->vert_count = meshes.temp_count;
 	int size = sizeof( Vertex ) * mesh->vert_count;
@@ -683,6 +685,24 @@ int FindRender( const char* name )
 	return index;
 }
 
+int FindMesh(const char* name)
+{
+	if (meshes.last_mesh && !strcmp(meshes.mesh_names[meshes.last_mesh], name))
+	{
+		return meshes.last_mesh;
+	}
+
+	for (int i = 0; i < meshes.mesh_count; i++)
+	{
+		if (!strcmp(meshes.mesh_names[i], name))
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 int PushInstance( lua_State *L )
 {
 	LUA_ERROR_IF( L, lua_gettop( L ) != 8, "PushInstance expects 5 parameters, two strings and 6 floats" );
@@ -697,24 +717,9 @@ int PushInstance( lua_State *L )
 	lua_settop( L, 0 );
 	v3 p = V3( x, y, z );
 
-	int index = meshes.last_mesh;
-	int found = 0;
+	int index = FindMesh(mesh_name);
 
-	if ( !strcmp( meshes.mesh_names[ index ], mesh_name ) ) found = 1;
-	else
-	{
-		for ( int i = 0; i < meshes.mesh_count; ++i )
-		{
-			if ( !strcmp( meshes.mesh_names[ i ], mesh_name ) )
-			{
-				index = i;
-				found = 1;
-				break;
-			}
-		}
-	}
-
-	if ( !found )
+	if ( index == -1 )
 	{
 		ERROR_IF( 0, "SetRender could not find %s", mesh_name );
 		return 0;
