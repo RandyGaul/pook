@@ -1,7 +1,7 @@
 playerSpeed = 10
 initialJumpVelocity = 35
 downwardVelocity = -30
-initialY = 0
+WORLD_BOTTOM = 0
 
 function SetPlayerPositionFromC( x, y, z )
 	if not player then return end
@@ -17,9 +17,14 @@ function SetPlayerVelocityFromC( x, y, z )
 	player.v.z = z
 end
 
+function SetPlayerTouchingGround( val )
+	player.touching_ground = val
+end
+
 -- this is shit, will replace once randy gets collision stuff working
 local function TouchingGround(self)
-	return self.p.y <= initialY
+	if ( self.p.y <= WORLD_BOTTOM ) then self.touching_ground = true end
+	return self.touching_ground
 end
 
 local function InitJump(self)
@@ -28,15 +33,6 @@ local function InitJump(self)
 	self.jumping = true
 	self.jumpStartTime = t
 	self.jumpInitialHeight = 0
-end
-
-local function UpdateJump(self)
-	local deltaJumpTime = t - self.jumpStartTime
-	self.p.y = self.jumpInitialHeight + downwardVelocity * deltaJumpTime * deltaJumpTime
-		+ initialJumpVelocity * deltaJumpTime
-	if self:TouchingGround() and deltaJumpTime > 0 then
-		self.jumping = false
-	end
 end
 
 local function Update(self)
@@ -64,6 +60,7 @@ local function Update(self)
 	end
 	if KeyPressed(KEY_SPACE) and self:TouchingGround() then
 		self.v.y = JumpHeight( 10 )
+		self.touching_ground = false
 	end
 
 	grav = v3( 0, -GRAVITY, 0 )
@@ -76,9 +73,9 @@ local function Update(self)
 		self.v.y = 0
 	end
 
-	UpdateCamLua()
 	SetPlayerPosition( self.p.x, self.p.y, self.p.z )
 	SetPlayerVelocity( self.v.x, self.v.y, self.v.z )
+	UpdateCamLua()
 end
 
 function GeneratePlayer()
@@ -89,6 +86,7 @@ function GeneratePlayer()
 	player.v = v3(0, 0, 0)
 
 	player.jumping = false
+	player.touching_ground = true;
 
 	player.GenerateMesh = function(self)
 		PushMeshLua(self.verts, "playerTriangles")
@@ -101,8 +99,6 @@ function GeneratePlayer()
 	-- clean this up later with some metatables
 	player.Update = Update
 	player.TouchingGround = TouchingGround
-	player.InitJump = InitJump
-	player.UpdateJump = UpdateJump
 
 	table.insert(world, player)
 	return player

@@ -929,6 +929,13 @@ v3 CalcCubeL( Cube c, v3 a )
 	return b;
 }
 
+void SetPlayerTouchingGround( int val )
+{
+	pcall_setup( "SetPlayerTouchingGround" );
+	lua_pushboolean( L, val );
+	pcall_do( 1, 0 );
+}
+
 void DoPlayerCollision( )
 {
 	for ( int i = 0; i < cube_count; ++i )
@@ -938,10 +945,11 @@ void DoPlayerCollision( )
 		v3 b = CalcCubeL( cube, player_position );
 		v3 n = sub( b, a );
 		float d = len( n );
-		if ( d < 4.0f && d != 0.0f )
+		float player_radius = 6.0f;
+		if ( d < player_radius && d != 0.0f )
 		{
 			float id = 1.0f / d;
-			id *= 4.0f - d;
+			id *= player_radius - d;
 			n.x *= id;
 			n.y *= id;
 			n.z *= id;
@@ -949,13 +957,16 @@ void DoPlayerCollision( )
 			player_position = a;
 			SetPlayerPositionFromC( L, a.x, a.y, a.z );
 			n = norm( sub( b, a ) );
+			float up_dot = dot( n, V3( 0, 1, 0 ) );
+			if ( up_dot < 0 ) up_dot = -up_dot;
+			if ( up_dot >= 0.3f ) SetPlayerTouchingGround( 1 );
 			float contribution = dot( n, player_velocity );
 			n.x *= contribution;
 			n.y *= contribution;
 			n.z *= contribution;
 			player_velocity = sub( player_velocity, n );
-			printf( "n: %f %f %f\n", n.x, n.y, n.z );
-			printf( "player_velocity: %f %f %f\n", player_velocity.x, player_velocity.y, player_velocity.z );
+			//printf( "n: %f %f %f\n", n.x, n.y, n.z );
+			//printf( "player_velocity: %f %f %f\n", player_velocity.x, player_velocity.y, player_velocity.z );
 			SetPlayerVelocityFromC( L, player_velocity.x, player_velocity.y, player_velocity.z );
 		}
 	}
@@ -1010,7 +1021,6 @@ int main( )
 	LookAt( cam, V3( 0, 0, 5 ), V3( 0, 0, 0 ), V3( 0, 1, 0 ) );
 
 	m4Mul( projection, cam, mvp );
-
 	UpdateMvp();
 
 	// init lua
@@ -1036,6 +1046,7 @@ int main( )
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 		float dt = ttTime( );
+		DoPlayerCollision( );
 		Tick( L, dt );
 
 		for ( int i = 0; i < meshes.render_count; ++i )
@@ -1053,8 +1064,6 @@ int main( )
 				dc->count = 0;
 			}
 		}
-
-		DoPlayerCollision( );
 
 		tgFlush( ctx, PookSwapBuffers );
 		TG_PRINT_GL_ERRORS( );
