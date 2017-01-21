@@ -21,7 +21,7 @@ function ObjectPooler:new(initialSize, maxSize, growthAmount, constructor, ...)
 	end
 end
 
-function ObjectPooler:get(...)
+function ObjectPooler:get()
 	if #self.stackPool == 0 then
 		local numToAdd = math.min(self.growthAmount, self.maxSize - self.currentSize)
 		for i = 1, numToAdd do

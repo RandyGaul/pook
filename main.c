@@ -885,7 +885,7 @@ int main( )
 	glBindVertexArray( vao );
 
 	SetUpRenderable(GL_TRIANGLES, "simple", "./assets/shaders/simple.vs", "./assets/shaders/simple.ps");
-	SetUpRenderable(GL_QUADS, "quads", "./assets/shaders/simple.vs", "./assets/shaders/simple.ps");
+	//SetUpRenderable(GL_QUADS, "quads", "./assets/shaders/simple.vs", "./assets/shaders/simple.ps");
 
 	LookAt( cam, V3( 0, 0, 5 ), V3( 0, 0, 0 ), V3( 0, 1, 0 ) );
 

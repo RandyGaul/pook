@@ -77,13 +77,11 @@ function GeneratePlayer()
 	player.jumping = false
 
 	player.GenerateMesh = function(self)
-		PushMeshLua(self.verts.triangleVerts, "playerTriangles")
-		PushMeshLua(self.verts.quadVerts, "playerQuads")
+		PushMeshLua(self.verts, "playerTriangles")
 	end
 
 	player.Render = function(self)
 		PushInstance("simple", "playerTriangles", self.p.x, self.p.y, self.p.z, .5, .5, .5)
-		PushInstance("quads", "playerQuads", self.p.x, self.p.y, self.p.z, .5, .5, .5)
 	end
 
 	-- clean this up later with some metatables

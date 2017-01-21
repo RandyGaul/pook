@@ -28,7 +28,6 @@ end
 
 local function createLists(filename, verts)
 	local triangleVerts = {}
-	local quadVerts = {}
 	io.input(filename)
 	for line in io.lines() do
 		local prefix = string.match(line, "%l*")
@@ -41,11 +40,14 @@ local function createLists(filename, verts)
 			if #vertList == 3 then
 				appendToTable(triangleVerts, vertList)
 			elseif #vertList == 4 then
-			    appendToTable(quadVerts, vertList)
+				vertList[6] = vertList[4]
+				vertList[4] = vertList[1]
+				vertList[5] = vertList[3]
+			    appendToTable(triangleVerts, vertList)
 			end
 		end
 	end
-	return triangleVerts, quadVerts
+	return triangleVerts
 end
 
 function ObjLoader.getVerts(filename)
@@ -54,7 +56,7 @@ function ObjLoader.getVerts(filename)
 	end
 
 	local triangleVerts, quadVerts = createLists(filename, loadVerts(filename))
-	local result = {triangleVerts = triangleVerts, quadVerts = quadVerts}
+	local result = triangleVerts
 
 	VertCache[filename] = result
 
