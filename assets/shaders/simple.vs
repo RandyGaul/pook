@@ -1,12 +1,14 @@
+#version 410
+
 uniform mat4 u_mvp;
 
-attribute vec4 a_pos;
-attribute vec4 a_col;
-attribute vec4 a_normal;
+in vec4 a_pos;
+in vec4 a_col;
+in vec4 a_normal;
 
-varying vec4 v_pos;
-varying vec4 v_col;
-varying vec4 v_normal;
+out vec4 v_pos;
+out vec4 v_col;
+out vec4 v_normal;
 
 void main( )
 {

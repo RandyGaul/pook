@@ -1,13 +1,17 @@
+#version 410
+
 uniform vec4 u_eye;
 
-varying vec4 v_pos;
-varying vec4 v_col;
-varying vec4 v_normal;
+in vec4 v_pos;
+in vec4 v_col;
+in vec4 v_normal;
+
+out vec4 out_color;
 
 void main( )
 {
-	gl_FragColor = v_col * dot( u_eye, v_normal );
-	gl_FragColor = u_eye;
-	gl_FragColor = v_pos;
-	gl_FragColor = v_col;
+	out_color = v_col * dot( u_eye, v_normal );
+	out_color = u_eye;
+	out_color = v_pos;
+	out_color = v_col;
 }

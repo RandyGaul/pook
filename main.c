@@ -375,33 +375,66 @@ void ErrorBox( const char *exp, const char *file, int line, const char *msg, ...
 	else strcpy( buffer + offset, "No Error Message" );
 
 	fprintf( stderr, "%s\n", buffer );
+#ifdef _WIN32
 	MessageBoxA( 0, buffer, 0, 0 );
+#endif
 }
 
-#define MSG_BOX( msg, ... ) \
-	do \
-	{ \
-		ErrorBox( NULL, __FILE__, __LINE__, msg, __VA_ARGS__ ); \
-	} while( 0 )
+#if defined(__APPLE__)
 
-#define ERROR_IF( condition, msg, ... ) \
-	do \
-	{ \
-		if ( condition ) \
+	#define MSG_BOX( msg, ... ) \
+		do \
 		{ \
-			MSG_BOX( msg, __VA_ARGS__ ); \
-		} \
-	} while ( 0 )
+			ErrorBox( NULL, __FILE__, __LINE__, msg, ##__VA_ARGS__ ); \
+		} while( 0 )
 
-#define LUA_ERROR_IF( L, condition, msg, ... ) \
-	do \
-	{ \
-		if ( condition ) \
+	#define ERROR_IF( condition, msg, ... ) \
+		do \
 		{ \
-			StackDump( L ); \
-			MSG_BOX( msg, __VA_ARGS__ ); \
-		} \
-	} while ( 0 )
+			if ( (condition) ) \
+			{ \
+				MSG_BOX( msg, ##__VA_ARGS__ ); \
+			} \
+		} while ( 0 )
+
+	#define LUA_ERROR_IF( L, condition, msg, ... ) \
+		do \
+		{ \
+			if ( (condition) ) \
+			{ \
+				StackDump( L ); \
+				MSG_BOX( msg, ##__VA_ARGS__ ); \
+			} \
+		} while ( 0 )
+
+#else
+
+	#define MSG_BOX( msg, ... ) \
+		do \
+		{ \
+			ErrorBox( NULL, __FILE__, __LINE__, msg, __VA_ARGS__ ); \
+		} while( 0 )
+
+	#define ERROR_IF( condition, msg, ... ) \
+		do \
+		{ \
+			if ( (condition) ) \
+			{ \
+				MSG_BOX( msg, __VA_ARGS__ ); \
+			} \
+		} while ( 0 )
+
+	#define LUA_ERROR_IF( L, condition, msg, ... ) \
+		do \
+		{ \
+			if ( (condition) ) \
+			{ \
+				StackDump( L ); \
+				MSG_BOX( msg, __VA_ARGS__ ); \
+			} \
+		} while ( 0 )
+
+#endif
 
 void StackDump( lua_State* L )
 {
@@ -702,6 +735,22 @@ void AddRender( tgRenderable* render, const char* name )
 	meshes.calls[ meshes.render_count++ ] = call;
 }
 
+#ifdef _WIN32
+    #include <direct.h>
+    #define getcwd _getcwd // stupid MSFT "deprecation" warning
+#else
+    #include <unistd.h>
+#endif
+
+#define PRINT_CWD( ) \
+	do \
+	{ \
+		char buf[ 1024 ]; \
+		char* res = getcwd( buf, sizeof( buf ) ); \
+		if ( res ) printf( "CWD: %s\n", res ); \
+	} \
+	while ( 0 )
+
 void SetUpRenderable(uint32_t primitiveType, const char* name, const char* vsPath, const char* psPath)
 {
 	tgVertexData vd;
@@ -723,15 +772,44 @@ void SetUpRenderable(uint32_t primitiveType, const char* name, const char* vsPat
 	AddRender( &r, name );
 }
 
+#if defined( __APPLE__ )
+
+	#include <unistd.h>
+	#include <mach-o/dyld.h>
+
+	void SetCDW( )
+	{
+		char buf[ 1024 ];
+		size_t size = sizeof( buf );
+		_NSGetExecutablePath( buf, (uint32_t*)&size );
+		char* s = buf + strlen( buf );
+		while ( *s != '/' ) --s;
+		*s = 0;
+		TG_ASSERT( !chdir( buf ) );
+	}
+
+#else
+
+	void SetCDW( )
+	{
+	}
+
+#endif
+
 int main( )
 {
+	SetCDW( );
+	PRINT_CWD( );
+
 	glfwSetErrorCallback( ErrorCB );
 
 	if ( !glfwInit( ) )
 		return 1;
 
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 2 );
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 0 );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 2 );
+	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
+	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
 	window = glfwCreateWindow( 1200, 800, "pook", NULL, NULL );
 	Reshape( window, 1200, 800 );
@@ -757,8 +835,12 @@ int main( )
 	glCullFace( GL_BACK );
 	glFrontFace( GL_CCW );
 
-	SetUpRenderable(GL_TRIANGLES, "simple", "assets/shaders/simple.vs", "assets/shaders/simple.ps");
-	SetUpRenderable(GL_QUADS, "quads", "assets/shaders/simple.vs", "assets/shaders/simple.ps");
+	GLuint vao;
+	glGenVertexArrays( 1, &vao );
+	glBindVertexArray( vao );
+
+	SetUpRenderable(GL_TRIANGLES, "simple", "./assets/shaders/simple.vs", "./assets/shaders/simple.ps");
+	SetUpRenderable(GL_QUADS, "quads", "./assets/shaders/simple.vs", "./assets/shaders/simple.ps");
 
 	LookAt( cam, V3( 0, 0, 5 ), V3( 0, 0, 0 ), V3( 0, 1, 0 ) );
 
@@ -804,6 +886,7 @@ int main( )
 		}
 
 		tgFlush( ctx, PookSwapBuffers );
+		printf( "final" );
 		TG_PRINT_GL_ERRORS( );
 	}
 

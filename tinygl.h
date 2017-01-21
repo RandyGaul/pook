@@ -647,6 +647,7 @@ static void tgRender( tgDrawCall* call )
 	uint32_t texture_count = call->texture_count;
 	uint32_t* textures = call->textures;
 
+		TG_PRINT_GL_ERRORS( );
 	if ( render->data.usage == GL_STATIC_DRAW )
 	{
 		if ( render->need_new_sync )
@@ -657,6 +658,7 @@ static void tgRender( tgDrawCall* call )
 	}
 	else tgDoMap( call, render );
 
+		TG_PRINT_GL_ERRORS( );
 	tgVertexData* data = &render->data;
 	tgVertexAttribute* attributes = data->attributes;
 	uint32_t vertexStride = data->vertex_stride;
@@ -664,10 +666,12 @@ static void tgRender( tgDrawCall* call )
 
 	tgSetActiveShader( render->program );
 
+		TG_PRINT_GL_ERRORS( );
 	uint32_t bufferNumber = render->buffer_number;
 	uint32_t buffer = render->buffers[ bufferNumber ];
 	glBindBuffer( GL_ARRAY_BUFFER, buffer );
 
+		TG_PRINT_GL_ERRORS( );
 	for ( uint32_t i = 0; i < attributeCount; ++i )
 	{
 		tgVertexAttribute* attribute = attributes + i;
@@ -677,10 +681,14 @@ static void tgRender( tgDrawCall* call )
 		uint32_t type = tgGetGLEnum( attribute->type );
 		uint32_t offset = attribute->offset;
 
+				TG_PRINT_GL_ERRORS( );
+		printf( "%d\n", location );
 		glEnableVertexAttribArray( location );
 		glVertexAttribPointer( location, size, type, GL_FALSE, vertexStride, (void*)((size_t)offset) );
+				TG_PRINT_GL_ERRORS( );
 	}
 
+		TG_PRINT_GL_ERRORS( );
 	for ( uint32_t i = 0; i < texture_count; ++i )
 	{
 		uint32_t gl_id = textures[ i ];
@@ -689,10 +697,12 @@ static void tgRender( tgDrawCall* call )
 		glBindTexture( GL_TEXTURE_2D, gl_id );
 	}
 
+			TG_PRINT_GL_ERRORS( );
 	uint32_t streamOffset = render->index0;
 	uint32_t streamSize = render->index1 - streamOffset;
 	glDrawArrays( data->primitive, streamOffset, streamSize );
 
+		TG_PRINT_GL_ERRORS( );
 	if ( render->need_new_sync )
 	{
 		// @TODO: This shouldn't be called for static buffers, only needed for streaming.
@@ -708,13 +718,16 @@ static void tgRender( tgDrawCall* call )
 		glDisableVertexAttribArray( location );
 	}
 
+		TG_PRINT_GL_ERRORS( );
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glUseProgram( 0 );
+		TG_PRINT_GL_ERRORS( );
 }
 
 void tgPresent( void* ctx )
 {
 	tgContext* context = (tgContext*)ctx;
+
 	glClear( GL_COLOR_BUFFER_BIT );
 
 	tgQSort( context->calls, context->count );
@@ -725,6 +738,8 @@ void tgPresent( void* ctx )
 		tgDrawCall* call = context->calls + i;
 		tgRender( call );
 	}
+
+	TG_PRINT_GL_ERRORS( );
 }
 
 void tgFlush( void* ctx, tgSwapBuffers swap )
