@@ -189,7 +189,7 @@ static uint32_t tg_djb2( unsigned char* str )
 	uint32_t hash = 5381;
 	int c;
 
-	while ( c = *str++ )
+	while ( (c = *str++) )
 		hash = ((hash << 5) + hash) + c;
 
 	return hash;
@@ -243,7 +243,7 @@ void tgAddAttribute( tgVertexData* vd, char* name, uint32_t size, uint32_t type,
 {
 	tgVertexAttribute va;
 	va.name = name;
-	va.hash = tg_djb2( name );
+	va.hash = tg_djb2( (unsigned char*)name );
 	va.size = size;
 	va.type = type;
 	va.offset = offset;
@@ -333,7 +333,7 @@ void tgSetShader( tgRenderable* r, tgShader* program )
 	TG_ASSERT( !r->program );
 
 	r->program = program;
-	glGetProgramiv( program->program, GL_ACTIVE_ATTRIBUTES, &r->attributeCount );
+	glGetProgramiv( program->program, GL_ACTIVE_ATTRIBUTES, (GLint*)&r->attributeCount );
 
 #if TG_DEBUG_CHECKS
 	if ( r->attributeCount != r->data.attribute_count )
@@ -353,8 +353,8 @@ void tgSetShader( tgRenderable* r, tgShader* program )
 	// Query and set all attribute locations as defined by the shader linking
 	for ( uint32_t i = 0; i < r->attributeCount; ++i )
 	{
-		glGetActiveAttrib( program->program, i, 256, 0, &size, (GLenum*)&type, buffer );
-		hash = tg_djb2( buffer );
+		glGetActiveAttrib( program->program, i, 256, 0, (GLint*)&size, (GLenum*)&type, buffer );
+		hash = tg_djb2( (unsigned char*)buffer );
 		type = tgGetGLType( type );
 
 #if TG_DEBUG_CHECKS
@@ -406,7 +406,7 @@ GLuint tgCompileShader( const char* Shader, uint32_t type )
 	glCompileShader( handle );
 
 	uint32_t compiled;
-	glGetShaderiv( handle, GL_COMPILE_STATUS, &compiled );
+	glGetShaderiv( handle, GL_COMPILE_STATUS, (GLint*)&compiled );
 
 #if TG_DEBUG_CHECKS
 	if ( !compiled )
@@ -436,7 +436,7 @@ void tgLoadShader( tgShader* s, const char* vertex, const char* pixel )
 	glLinkProgram( program );
 
 	uint32_t linked;
-	glGetProgramiv( program, GL_LINK_STATUS, &linked );
+	glGetProgramiv( program, GL_LINK_STATUS, (GLint*)&linked );
 
 #if TG_DEBUG_CHECKS
 	if ( !linked )
@@ -468,14 +468,14 @@ void tgLoadShader( tgShader* s, const char* vertex, const char* pixel )
 		uint32_t nameLength;
 		tgUniform u;
 
-		glGetActiveUniform( program, (GLint)i, nameSize, &nameLength, &u.size, (GLenum*)&u.type, u.name );
+		glGetActiveUniform( program, (GLint)i, nameSize, (GLsizei*)&nameLength, (GLsizei*)&u.size, (GLenum*)&u.type, u.name );
 
 		// Uniform named in a Shader is too long for the UNIFORM_NAME_LENGTH constant
 		TG_ASSERT( nameLength <= TG_UNIFORM_NAME_LENGTH );
 
 		u.location = glGetUniformLocation( program, u.name );
 		u.type = tgGetGLType( u.type );
-		u.hash = tg_djb2( u.name );
+		u.hash = tg_djb2( (unsigned char*)u.name );
 		u.id = i;
 
 		// @TODO: Perhaps need to handle appended [0] to Uniform names?
@@ -501,7 +501,7 @@ tgUniform* tgFindUniform( tgShader* s, char* name )
 {
 	uint32_t uniform_count = s->uniform_count;
 	tgUniform* uniforms = s->uniforms;
-	uint32_t hash = tg_djb2( name );
+	uint32_t hash = tg_djb2( (unsigned char*)name );
 
 	for ( uint32_t i = 0; i < uniform_count; ++i )
 	{
@@ -765,7 +765,13 @@ void tgPerspective( float* m, float y_fov_radians, float aspect, float n, float 
 #pragma comment( lib, "glu32.lib" )
 
 #if TG_DEBUG_CHECKS
-#include <GL/GLU.h>
+#if defined(__APPLE__)
+	#include <OpenGL/gl.h>
+	#include <OpenGL/glu.h>
+#else
+	#include <GL/gl.h>
+	#include <GL/glu.h>
+#endif
 void tgPrintGLErrors_internal( char* file, uint32_t line )
 {
 	GLenum code = glGetError( );
@@ -782,7 +788,7 @@ void tgPrintGLErrors_internal( char* file, uint32_t line )
 			++file;
 		}
 
-		const char* str = gluErrorString( code );
+		const char* str = (const char*)gluErrorString( code );
 		printf( "OpenGL Error %s ( %u ): %u, %s\n", last_slash, line, code, str );
 	}
 }

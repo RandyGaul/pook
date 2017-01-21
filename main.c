@@ -9,9 +9,15 @@
 #define TT_IMPLEMENTATION
 #include "tinytime.h"
 
-#include "lua\lua.h"
-#include "lua\lualib.h"
-#include "lua\lauxlib.h"
+#if defined(__APPLE__)
+	#include <lua.h>
+	#include <lualib.h>
+	#include <lauxlib.h>
+#else
+	#include "lua\lua.h"
+	#include "lua\lualib.h"
+	#include "lua\lauxlib.h"
+#endif
 
 #include <stdio.h>
 #include <float.h>
