@@ -261,7 +261,7 @@ void LookAt( float* m, v3 eye, v3 center, v3 up )
 
 	v3 x = V3( m[ 0 ], m[ 4 ], m[ 8 ] );
 	v3 y = V3( m[ 0 + 1 ], m[ 4 + 1 ], m[ 8 + 1 ] );
-	v3 z = V3( m[ 0 + 2 ], m[ 4 + 2 ], m[ 8 ] + 2 );
+	v3 z = V3( m[ 0 + 2 ], m[ 4 + 2 ], m[ 8 + 2 ] );
 
 	m[ 12 ] = -dot( x, eye );
 	m[ 13 ] = -dot( y, eye );
