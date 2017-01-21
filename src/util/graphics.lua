@@ -10,17 +10,18 @@ function MakeMeshes( )
 	end
 end
 
-function GenerateTriangleMesh(triangleVerts)
-	for i, j in ipairs(triangleVerts) do
+function GenerateMesh(verts, name)
+	for i, j in ipairs(verts) do
 		if i % 3 == 0 then
 			PushVert(j[1], j[2], j[3], 1, 0.4, 0.8)
-		end
-		if i % 3 == 1 then
+		elseif i % 3 == 1 then
 			PushVert(j[1], j[2], j[3], 0.5, 1, 0.4)
-		end
-		if i % 3 == 2 then
+		elseif i % 3 == 2 then
 			PushVert(j[1], j[2], j[3], 0.25, 0.1, 1)
+		else
+			PushVert(j[1], j[2], j[3], 1, .25, 0)
 		end
 	end
-	PushMesh("triangle")
+
+	PushMesh(name)
 end

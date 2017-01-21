@@ -3,10 +3,6 @@ local ObjLoader = {}
 VertCache = {}
 
 local function loadVerts(filename)
-	if VertCache[filename] ~= nil then
-		return VertCache[filename]
-	end
-
 	local verts = {}
 	io.input(filename)
 	for line in io.lines() do
@@ -21,7 +17,6 @@ local function loadVerts(filename)
 		end
 	end
 
-	VertCache[filename] = verts
 	return verts
 end
 
@@ -52,8 +47,16 @@ local function createLists(filename, verts)
 end
 
 function ObjLoader.getVerts(filename)
-	local triangleVerts, quads = createLists(filename, loadVerts(filename))
-	return {triangleVerts = triangleVerts, quadVerts = quadVerts}
+	if VertCache[filename] ~= nil then
+		return VertCache[filename]
+	end
+
+	local triangleVerts, quadVerts = createLists(filename, loadVerts(filename))
+	local result = {triangleVerts = triangleVerts, quadVerts = quadVerts}
+
+	VertCache[filename] = result
+
+	return result
 end
 
 return ObjLoader

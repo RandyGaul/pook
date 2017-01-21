@@ -23,6 +23,7 @@ float projection[ 16 ];
 float mvp[ 16 ];
 float cam[ 16 ];
 tgShader simple;
+struct Vertex;
 
 lua_State* L;
 
@@ -695,6 +696,27 @@ void AddRender( tgRenderable* render, const char* name )
 	meshes.calls[ meshes.render_count++ ] = call;
 }
 
+void SetUpRenderable(uint32_t primitiveType, const char* name, const char* vsPath, const char* psPath)
+{
+	tgVertexData vd;
+	tgMakeVertexData( &vd, 1024 * 1024, sizeof( Vertex ), primitiveType, GL_DYNAMIC_DRAW );
+	tgAddAttribute( &vd, "a_pos", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, position ) );
+	tgAddAttribute( &vd, "a_col", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, color ) );
+	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
+
+	tgRenderable r;
+	tgMakeRenderable( &r, &vd );
+	char* vs = (char*)ReadFileToMemory( vsPath, 0 );
+	char* ps = (char*)ReadFileToMemory( psPath, 0 );
+	TG_ASSERT( vs );
+	TG_ASSERT( ps );
+	tgLoadShader( &simple, vs, ps );
+	free( vs );
+	free( ps );
+	tgSetShader( &r, &simple );
+	AddRender( &r, name );
+}
+
 int main( )
 {
 	glfwSetErrorCallback( ErrorCB );
@@ -729,23 +751,8 @@ int main( )
 	glCullFace( GL_BACK );
 	glFrontFace( GL_CCW );
 
-	tgVertexData vd;
-	tgMakeVertexData( &vd, 1024 * 1024, sizeof( Vertex ), GL_TRIANGLES, GL_DYNAMIC_DRAW );
-	tgAddAttribute( &vd, "a_pos", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, position ) );
-	tgAddAttribute( &vd, "a_col", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, color ) );
-	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
-
-	tgRenderable r;
-	tgMakeRenderable( &r, &vd );
-	char* vs = (char*)ReadFileToMemory( "assets/shaders/simple.vs", 0 );
-	char* ps = (char*)ReadFileToMemory( "assets/shaders/simple.ps", 0 );
-	TG_ASSERT( vs );
-	TG_ASSERT( ps );
-	tgLoadShader( &simple, vs, ps );
-	free( vs );
-	free( ps );
-	tgSetShader( &r, &simple );
-	AddRender( &r, "simple" );
+	SetUpRenderable(GL_TRIANGLES, "simple", "assets/shaders/simple.vs", "assets/shaders/simple.ps");
+	SetUpRenderable(GL_QUADS, "quads", "assets/shaders/simple.vs", "assets/shaders/simple.ps");
 
 	LookAt( cam, V3( 0, 0, 5 ), V3( 0, 0, 0 ), V3( 0, 1, 0 ) );
 

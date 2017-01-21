@@ -9,4 +9,5 @@ for i, v in pairs(world) do
 	v:update()
 end
 
-Flush( "simple" )
+-- Flush( "simple" )
+-- Flush( "quads" )
