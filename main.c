@@ -727,8 +727,8 @@ int main( )
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 2 );
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 0 );
 
-	window = glfwCreateWindow( 640, 480, "pook", NULL, NULL );
-	Reshape( window, 640, 480 );
+	window = glfwCreateWindow( 1200, 800, "pook", NULL, NULL );
+	Reshape( window, 1200, 800 );
 
 	if ( !window )
 	{

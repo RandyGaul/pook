@@ -6,11 +6,11 @@ end
 
 function MakeMeshes( )
 	for i, v in pairs(world) do
-		v:generateMesh()
+		v:GenerateMesh()
 	end
 end
 
-function GenerateMesh(verts, name)
+function PushMeshLua(verts, name)
 	for i, j in ipairs(verts) do
 		if i % 3 == 0 then
 			PushVert(j[1], j[2], j[3], 1, 0.4, 0.8)

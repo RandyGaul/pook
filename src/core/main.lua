@@ -5,8 +5,8 @@ if KeyPressed( 'a' ) then
 end
 
 for i, v in pairs(world) do
-	v:render()
-	v:update()
+	v:Render()
+	v:Update()
 end
 
 -- Flush( "simple" )
