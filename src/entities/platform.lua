@@ -1,3 +1,5 @@
+platforms = {}
+
 local function GenerateMesh(self)
 	if GeneratedMeshes["platform"] ~= nil then
 		return
@@ -38,7 +40,10 @@ function GeneratePlatform()
 
 	-- function platform.init() end
 	platform.Init = function(self, x, y, z, sx, sy, sz)
-		print("x: "..x..", y:"..y..", z:"..z..", sx:"..sx..", sy:"..sy..", sz:"..sz)
+		-- print("x:"..x)
+		-- print("y:"..y)
+		-- print("z:"..z)
+		-- print("x: "..x..", y:"..y..", z:"..z..", sx:"..sx..", sy:"..sy..", sz:"..sz)
 		local coin = cowPool:get()
 		self.p.x = x
 		self.p.y = y
@@ -54,6 +59,8 @@ function GeneratePlatform()
 		local p = platform.p
 		local s = platform.s
 		AddCubeCollider( s.x, s.y, s.z, p.x, p.y, p.z )
+
+		table.insert(platforms, self) -- clean this up if we switch levels.
 	end
 
 	return platform

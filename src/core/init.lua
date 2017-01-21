@@ -11,10 +11,11 @@ function JumpHeight( height )
     return math.sqrt( 2 * GRAVITY * height )
 end
 
+cowPool = ObjectPooler(15, 50, 2, GenerateCow)
+platformPool = ObjectPooler(15, 50, 2, GeneratePlatform)
 player = GeneratePlayer()
-cowPool = ObjectPooler(15, 20, 2, GenerateCow)
-platformPool = ObjectPooler(15, 5, 2, GeneratePlatform)
+
 --skybox = GenerateSkybox()
-GenerateLevel(5)
+GenerateLevel(30)
 
 -- add init stuff below
