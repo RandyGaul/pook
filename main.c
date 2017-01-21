@@ -703,17 +703,21 @@ int FindMesh(const char* name)
 	return -1;
 }
 
-int PushInstance( lua_State *L )
+int PushInstance_internal( lua_State *L )
 {
-	LUA_ERROR_IF( L, lua_gettop( L ) != 8, "PushInstance expects 5 parameters, two strings and 6 floats" );
-	const char* render_name = luaL_checkstring( L, -8 );
-	const char* mesh_name = luaL_checkstring( L, -7 );
-	float x = (float)luaL_checknumber( L, -6 );
-	float y = (float)luaL_checknumber( L, -5 );
-	float z = (float)luaL_checknumber( L, -4 );
-	float sx = (float)luaL_checknumber( L, -3 );
-	float sy = (float)luaL_checknumber( L, -2 );
-	float sz = (float)luaL_checknumber( L, -1 );
+	LUA_ERROR_IF( L, lua_gettop( L ) != 12, "PushInstance expects 12 parameters, two strings and 10 floats" );
+	const char* render_name = luaL_checkstring( L, -12 );
+	const char* mesh_name = luaL_checkstring( L, -11 );
+	float x = (float)luaL_checknumber( L, -10 );
+	float y = (float)luaL_checknumber( L, -9 );
+	float z = (float)luaL_checknumber( L, -8 );
+	float sx = (float)luaL_checknumber( L, -7 );
+	float sy = (float)luaL_checknumber( L, -6 );
+	float sz = (float)luaL_checknumber( L, -5 );
+	float rx = (float)luaL_checknumber( L, -4 );
+	float ry = (float)luaL_checknumber( L, -3 );
+	float rz = (float)luaL_checknumber( L, -2 );
+	float ra = (float)luaL_checknumber( L, -1 );
 	lua_settop( L, 0 );
 	v3 p = V3( x, y, z );
 
@@ -729,9 +733,16 @@ int PushInstance( lua_State *L )
 	Mesh* mesh = meshes.meshes + index;
 	DrawCall* call = meshes.calls + FindRender( render_name );
 
+	v3 axis = V3( rx, ry, rz );
+	float angle = ra;
+	m3 r = m3Rotation( axis, angle );
+
 	for ( int i = 0; i < mesh->vert_count; ++i )
 	{
 		Vertex v = mesh->verts[ i ];
+
+		v.position = v3Mul( r, v.position );
+
 		v.position.x *= sx;
 		v.position.y *= sy;
 		v.position.z *= sz;
@@ -888,7 +899,7 @@ int main( )
 	Dofile( L, "src/core/init.lua" );
 	Register( L, PushMesh );
 	Register( L, PushVert_internal );
-	Register( L, PushInstance );
+	Register( L, PushInstance_internal );
 	Register( L, UpdateCam );
 	Register( L, Flush );
 	Register( L, FlushVerts );

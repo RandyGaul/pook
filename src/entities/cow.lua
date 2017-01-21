@@ -23,30 +23,16 @@ function GenerateCow()
 	end
 
 	cow.Render = function(self)
-		PushInstance( "simple", "triangle", self.pos.x, self.pos.y, self.pos.z, .5, .5, .5)
-		PushInstance( "quads", "quad", self.pos.x, self.pos.y, self.pos.z, .5, .5, .5)
+		local angle = self.spinAngle
+		local rx = 0
+		local ry = 1
+		local rz = 0
+		PushInstance( "simple", "triangle", self.pos.x, self.pos.y, self.pos.z, .5, .5, .5, rx, ry, rz, angle)
+		PushInstance( "quads", "quad", self.pos.x, self.pos.y, self.pos.z, .5, .5, .5, rx, ry, rz, angle)
 	end
 
 	cow.Update = function(self)
-		self:Spin()
-	end
-
-	cow.Spin = function(self)
 		self.spinAngle = self.spinAngle + COIN_SPIN_SPEED * dt
-
-		local function spinFunc(verts, tempVerts, mesh)
-			for i, v in pairs(verts) do
-				local rotatedX = v[1] * math.cos(self.spinAngle) - v[3] * math.sin(self.spinAngle)
-				local rotatedZ = v[1] * math.sin(self.spinAngle) + v[3] * math.cos(self.spinAngle)
-				tempVerts[i][1] = rotatedX
-				tempVerts[i][2] = v[2]
-				tempVerts[i][3] = rotatedZ
-			end
-			PushMeshLua(tempVerts, mesh)
-		end
-
-		spinFunc(self.verts.triangleVerts, self.tempTriangleVerts, "triangle")
-		spinFunc(self.verts.quadVerts, self.tempQuadVerts, "quad")
 	end
 
 	return cow
