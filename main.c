@@ -32,7 +32,7 @@ void ErrorCB( int error, const char* description )
 }
 
 void pcall_setup( const char* func_name );
-void pcall_do( int arg_count );
+void pcall_do( int arg_count, int ret_value_count );
 void HandleMouseMovement( lua_State* L, float x, float y );
 void UpdateMvp();
 void m4Mul( float* a, float* b, float* c );
@@ -50,7 +50,7 @@ void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 
 void MouseCB(GLFWwindow* window, double x, double y)
 {
-	HandleMouseMovement( L, x, y);
+	HandleMouseMovement( L, (float)x, (float)y );
 }
 
 void Reshape( GLFWwindow* window, int width, int height )
@@ -256,25 +256,30 @@ void LookAt( float* m, v3 eye, v3 center, v3 up )
 
 	m[ 8 ] = side.z;
 	m[ 9 ] = top.z;
-	m[ 10 ]= -front.z;
-	m[ 11 ]= 0;
+	m[ 10 ] = -front.z;
+	m[ 11 ] = 0;
 
-	m[ 12 ]= -eye.x;
-	m[ 13 ]= -eye.y;
-	m[ 14 ]= -eye.z;
-	m[ 15 ]= 1.0f;
+	v3 x = V3( m[ 0 ], m[ 4 ], m[ 8 ] );
+	v3 y = V3( m[ 0 + 1 ], m[ 4 + 1 ], m[ 8 + 1 ] );
+	v3 z = V3( m[ 0 + 2 ], m[ 4 + 2 ], m[ 8 ] + 2 );
+
+	m[ 12 ] = -dot( x, eye );
+	m[ 13 ] = -dot( y, eye );
+	m[ 14 ] = -dot( z, eye );
+	m[ 15 ] = 1.0f;
 }
 
-void UpdateCam( lua_State *L )
+int UpdateCam( lua_State *L )
 {
 	float x = (float)luaL_checknumber(L, -3);
 	float y = (float)luaL_checknumber(L, -2);
 	float z = (float)luaL_checknumber(L, -1);
 	lua_settop(L, 0);
 
-	v3 eye = V3(0, 0, 5); // send this in from lua later
-	LookAt(cam, eye, V3(eye.x + x, eye.y + y, eye.z + z), V3(0, 1, 0));
+	v3 eye = V3(5, 0, 0); // send this in from lua later
+	LookAt(cam, eye, add( eye, V3( x, y, z ) ), V3(0, 1, 0));
 	UpdateMvp();
+	return 0;
 }
 
 void UpdateMvp()
@@ -432,17 +437,17 @@ void pcall_setup( const char* func_name )
 	lua_getglobal( L, func_name ); // 2
 }
 
-void pcall_do( int arg_count, int ret_value_count)
+void pcall_do( int arg_count, int ret_value_count )
 {
 	int error_func_index = -((int)(arg_count + 2));
 	int ret = lua_pcall( L, arg_count, ret_value_count, error_func_index );
 
-	if (ret != 0)
+	if ( ret != 0 )
 	{
 		printf("you done fucked up son. %s\n", lua_tostring(L, -1));
 	}
 
-	lua_settop(L, 0);
+	lua_settop( L, 0 );
 }
 
 void Tick( lua_State* L, float time )
