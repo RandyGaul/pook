@@ -8,6 +8,7 @@ camInitialized = true
 sensitivity = .3
 maxAbsDeg = 360
 camDist = 5
+camOffsetY = 2
 up = {x = 0, y = 1, z = 0}
 
 local function clampDeg(deg)
@@ -43,13 +44,14 @@ function handleMouseMovement(x, y)
 
 	front = v3(vx, vy, vz)
 	front:normalize()
+	right = v3(vz, 0, -vx)
 
 	prevX, prevY = x, y
 
-	-- print("front is {x: "..front.x..", y: "..front.y..", z: "..front.z.."}")
-	UpdateCam(player.p.x, player.p.y, player.p.z + 4, front.x, front.y, front.z)
+	UpdateCamLua()
 end
 
 function UpdateCamLua()
-	-- calculate new eye position and new lookat position here
+	local eye = player.p - front * camDist
+	UpdateCam(eye.x, eye.y + camOffsetY, eye.z, front.x, front.y, front.z)
 end

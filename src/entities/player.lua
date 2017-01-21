@@ -1,21 +1,31 @@
 playerSpeed = 5
 
 local function Update(self)
+	local scaledFront = front * playerSpeed
+	local scaledRight = right * playerSpeed
+
 	if KeyDown("w") then
-		self.p.z = self.p.z - playerSpeed * dt
-	elseif KeyDown("a") then
-		self.p.x = self.p.x - playerSpeed * dt
-	elseif KeyDown("s") then
-		self.p.z = self.p.z + playerSpeed * dt
-	elseif KeyDown("d") then
-		self.p.x = self.p.x + playerSpeed * dt
+		self.p.z = self.p.z + scaledFront.z * dt
+		self.p.x = self.p.x + scaledFront.x * dt
+	end
+	if KeyDown("a") then
+		self.p.z = self.p.z + scaledRight.z * dt
+		self.p.x = self.p.x + scaledRight.x * dt
+	end
+	if KeyDown("s") then
+		self.p.z = self.p.z - scaledFront.z * dt
+		self.p.x = self.p.x - scaledFront.x * dt 
+	end
+	if KeyDown("d") then
+		self.p.z = self.p.z - scaledRight.z * dt
+		self.p.x = self.p.x - scaledRight.x * dt
 	end
 
 	if self:Moved() then
 		self.lastPos.x = self.p.x
 		self.lastPos.y = self.p.y
 		self.lastPos.z = self.p.z
-		UpdateCam(self.p.x, self.p.y, self.p.z + 4, front.x, front.y, front.z)
+		UpdateCamLua()
 	end
 end
 
