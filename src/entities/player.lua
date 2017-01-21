@@ -1,4 +1,29 @@
-playerSpeed = 5
+playerSpeed = 10
+initialJumpVelocity = 35
+downwardVelocity = -30
+initialY = 0
+
+-- this is shit, will replace once randy gets collision stuff working
+local function TouchingGround(self)
+	return self.p.y <= initialY
+end
+
+local function InitJump(self)
+	if self.jumping then return end
+
+	self.jumping = true
+	self.jumpStartTime = t
+	self.jumpInitialHeight = 0
+end
+
+local function UpdateJump(self)
+	local deltaJumpTime = t - self.jumpStartTime
+	self.p.y = self.jumpInitialHeight + downwardVelocity * deltaJumpTime * deltaJumpTime
+		+ initialJumpVelocity * deltaJumpTime
+	if self:TouchingGround() and deltaJumpTime > 0 then
+		self.jumping = false
+	end
+end
 
 local function Update(self)
 	local scaledFront = front * playerSpeed
@@ -19,6 +44,13 @@ local function Update(self)
 	if KeyDown("d") then
 		self.p.z = self.p.z - scaledRight.z * dt
 		self.p.x = self.p.x - scaledRight.x * dt
+	end
+	if KeyPressed(KEY_SPACE) and self:TouchingGround() then
+		self:InitJump()
+	end
+
+	if self.jumping then
+		self:UpdateJump()
 	end
 
 	if self:Moved() then
@@ -41,6 +73,9 @@ function GeneratePlayer()
 	player.p = v3(0, 0, 0)
 	player.lastPos = v3(0, 0, 0)
 
+	player.jumpStartTime = 0
+	player.jumping = false
+
 	player.GenerateMesh = function(self)
 		PushMeshLua(self.verts.triangleVerts, "playerTriangles")
 		PushMeshLua(self.verts.quadVerts, "playerQuads")
@@ -51,8 +86,12 @@ function GeneratePlayer()
 		PushInstance("quads", "playerQuads", self.p.x, self.p.y, self.p.z, .5, .5, .5)
 	end
 
+	-- clean this up later with some metatables
 	player.Update = Update
 	player.Moved = Moved
+	player.TouchingGround = TouchingGround
+	player.InitJump = InitJump
+	player.UpdateJump = UpdateJump
 
 	table.insert(world, player)
 	return player

@@ -17,7 +17,6 @@ function v3:normalize()
 	self.z = self.z / magnitude
 end
 
-
 -- pro tip - don't use : for arithmetic metamethods or else a gets replaced with self (nil)
 function v3.__add(a, b)
 	return v3(a.x + b.x, a.y + b.y, a.z + b.z)
