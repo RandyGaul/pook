@@ -57,7 +57,7 @@ local function GenerateMesh(self)
 end
 
 local function Render(self)
-	PushInstance("simple", "cube", self.p.x, self.p.y, self.p.z)
+	PushInstance("simple", "cube", self.p.x, self.p.y, self.p.z, 1, 1, 1)
 end
 
 local function Update()

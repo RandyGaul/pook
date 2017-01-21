@@ -662,12 +662,15 @@ int FindRender( const char* name )
 
 int PushInstance( lua_State *L )
 {
-	LUA_ERROR_IF( L, lua_gettop( L ) != 5, "PushInstance expects 5 parameters, two strings and 3 floats" );
-	const char* render_name = luaL_checkstring( L, -5 );
-	const char* mesh_name = luaL_checkstring( L, -4 );
-	float x = (float)luaL_checknumber( L, -3 );
-	float y = (float)luaL_checknumber( L, -2 );
-	float z = (float)luaL_checknumber( L, -1 );
+	LUA_ERROR_IF( L, lua_gettop( L ) != 8, "PushInstance expects 5 parameters, two strings and 6 floats" );
+	const char* render_name = luaL_checkstring( L, -8 );
+	const char* mesh_name = luaL_checkstring( L, -7 );
+	float x = (float)luaL_checknumber( L, -6 );
+	float y = (float)luaL_checknumber( L, -5 );
+	float z = (float)luaL_checknumber( L, -4 );
+	float sx = (float)luaL_checknumber( L, -3 );
+	float sy = (float)luaL_checknumber( L, -2 );
+	float sz = (float)luaL_checknumber( L, -1 );
 	lua_settop( L, 0 );
 	v3 p = V3( x, y, z );
 

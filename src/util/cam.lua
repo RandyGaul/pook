@@ -6,15 +6,15 @@ end
 camInitialized = true
 
 sensitivity = .3
-maxAbsDeg = 180
+maxAbsDeg = 250
 up = {x = 0, y = 1, z = 0}
 
 local function clampDeg(deg)
-	if deg < -maxAbsDeg then
-		return -maxAbsDeg
-	elseif deg > maxAbsDeg then
-		return maxAbsDeg
-	end
+	-- if deg < -maxAbsDeg then
+	-- 	return -maxAbsDeg
+	-- elseif deg > maxAbsDeg then
+	-- 	return maxAbsDeg
+	-- end
 
 	return deg
 end
