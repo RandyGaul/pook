@@ -3,6 +3,20 @@ initialJumpVelocity = 35
 downwardVelocity = -30
 initialY = 0
 
+function SetPlayerPositionFromC( x, y, z )
+	if not player then return end
+	player.p.x = x
+	player.p.y = y
+	player.p.z = z
+end
+
+function SetPlayerVelocityFromC( x, y, z )
+	if not player then return end
+	player.v.x = x
+	player.v.y = y
+	player.v.z = z
+end
+
 -- this is shit, will replace once randy gets collision stuff working
 local function TouchingGround(self)
 	return self.p.y <= initialY
@@ -29,41 +43,43 @@ local function Update(self)
 	local scaledFront = front * playerSpeed
 	local scaledRight = right * playerSpeed
 
+	self.v.x = 0
+	self.v.z = 0
+
 	if KeyDown("w") then
-		self.p.z = self.p.z + scaledFront.z * dt
-		self.p.x = self.p.x + scaledFront.x * dt
+		self.v.z = scaledFront.z
+		self.v.x = scaledFront.x
 	end
 	if KeyDown("a") then
-		self.p.z = self.p.z + scaledRight.z * dt
-		self.p.x = self.p.x + scaledRight.x * dt
+		self.v.z = scaledRight.z
+		self.v.x = scaledRight.x
 	end
 	if KeyDown("s") then
-		self.p.z = self.p.z - scaledFront.z * dt
-		self.p.x = self.p.x - scaledFront.x * dt 
+		self.v.z = -scaledFront.z
+		self.v.x = -scaledFront.x
 	end
 	if KeyDown("d") then
-		self.p.z = self.p.z - scaledRight.z * dt
-		self.p.x = self.p.x - scaledRight.x * dt
+		self.v.z = -scaledRight.z
+		self.v.x = -scaledRight.x
 	end
 	if KeyPressed(KEY_SPACE) and self:TouchingGround() then
-		self:InitJump()
+		self.v.y = JumpHeight( 5 )
+		print( JumpHeight( 5 ) )
 	end
 
-	if self.jumping then
-		self:UpdateJump()
+	grav = v3( 0, -GRAVITY, 0 )
+	self.v = self.v + grav * dt
+	self.p = self.p + self.v * dt
+
+	-- ghetto ground collision
+	if self.p.y < 0 then
+		self.p.y = 0
+		self.v.y = 0
 	end
 
-	if self:Moved() then
-		self.lastPos.x = self.p.x
-		self.lastPos.y = self.p.y
-		self.lastPos.z = self.p.z
-		UpdateCamLua()
-	end
-end
-
-local function Moved(self)
-	return self.p.x ~= self.lastPos.x or self.p.y ~= self.lastPos.y
-		or self.p.z ~= self.lastPos.z
+	UpdateCamLua()
+	SetPlayerPosition( self.p.x, self.p.y, self.p.z )
+	SetPlayerVelocity( self.v.x, self.v.y, self.v.z )
 end
 
 function GeneratePlayer()
@@ -71,9 +87,8 @@ function GeneratePlayer()
 
 	player.verts = ObjLoader.getVerts("assets/models/cow.obj")
 	player.p = v3(0, 0, 0)
-	player.lastPos = v3(0, 0, 0)
+	player.v = v3(0, 0, 0)
 
-	player.jumpStartTime = 0
 	player.jumping = false
 
 	player.GenerateMesh = function(self)
@@ -86,7 +101,6 @@ function GeneratePlayer()
 
 	-- clean this up later with some metatables
 	player.Update = Update
-	player.Moved = Moved
 	player.TouchingGround = TouchingGround
 	player.InitJump = InitJump
 	player.UpdateJump = UpdateJump

@@ -5,6 +5,11 @@ s = math.sin
 c = math.cos
 world = {}
 math.randomseed(os.time())
+GRAVITY = 5
+
+function JumpHeight( height )
+    return math.sqrt( 2 * GRAVITY * height )
+end
 
 cowPool = ObjectPooler(15, 20, 2, GenerateCow)
 platformPool = ObjectPooler(15, 5, 2, GeneratePlatform)

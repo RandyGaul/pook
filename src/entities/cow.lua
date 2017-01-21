@@ -1,4 +1,4 @@
-COIN_SPIN_SPEED = math.pi * 2
+COIN_SPIN_SPEED = math.pi * 2 * 0.1
 
 function GenerateCow()
 	local cow = {}

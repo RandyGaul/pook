@@ -841,6 +841,126 @@ void SetUpRenderable(uint32_t primitiveType, const char* name, const char* vsPat
 
 #endif
 
+typedef struct
+{
+	v3 e;
+	v3 p;
+} Cube;
+
+#define MAX_CUBES 1024
+int cube_count;
+Cube cubes[ 1024 ];
+
+v3 player_position;
+v3 player_velocity;
+
+int SetPlayerPosition( lua_State* L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 3, "SetPlayerPosition expects 3 floats" );
+	float x = (float)luaL_checknumber( L, -3 );
+	float y = (float)luaL_checknumber( L, -2 );
+	float z = (float)luaL_checknumber( L, -1 );
+	lua_settop( L, 0 );
+	player_position = V3( x, y, z );
+	return 0;
+}
+
+int SetPlayerVelocity( lua_State* L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 3, "SetPlayerVelocity expects 3 floats" );
+	float x = (float)luaL_checknumber( L, -3 );
+	float y = (float)luaL_checknumber( L, -2 );
+	float z = (float)luaL_checknumber( L, -1 );
+	lua_settop( L, 0 );
+	player_velocity = V3( x, y, z );
+	return 0;
+}
+
+int AddCubeCollider( lua_State* L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 6, "AddCubeCollider expects 6 floats" );
+	float ex = (float)luaL_checknumber( L, -6 );
+	float ey = (float)luaL_checknumber( L, -5 );
+	float ez = (float)luaL_checknumber( L, -4 );
+	float px = (float)luaL_checknumber( L, -3 );
+	float py = (float)luaL_checknumber( L, -2 );
+	float pz = (float)luaL_checknumber( L, -1 );
+	lua_settop( L, 0 );
+	Cube cube;
+	cube.e = V3( ex * 0.25f, ey * 0.25f, ez * 0.25f );
+	cube.p = V3( px, py, pz );
+	TG_ASSERT( cube_count < MAX_CUBES );
+	cubes[ cube_count++ ] = cube;
+	printf( "got cube %f, %f, %f, %f, %f, %f\n", ex, ey, ez, px, py, pz );
+	return 0;
+}
+
+void SetPlayerPositionFromC( lua_State* L, float x, float y, float z )
+{
+	pcall_setup( "SetPlayerPositionFromC" );
+	lua_pushnumber( L, (lua_Number)x );
+	lua_pushnumber( L, (lua_Number)y );
+	lua_pushnumber( L, (lua_Number)z );
+	pcall_do( 3, 0 );
+}
+
+void SetPlayerVelocityFromC( lua_State* L, float x, float y, float z )
+{
+	pcall_setup( "SetPlayerVelocityFromC" );
+	lua_pushnumber( L, (lua_Number)x );
+	lua_pushnumber( L, (lua_Number)y );
+	lua_pushnumber( L, (lua_Number)z );
+	pcall_do( 3, 0 );
+}
+
+v3 CalcCubeL( Cube c, v3 a )
+{
+	v3 b = a;
+	v3 p = c.p;
+	v3 e = c.e;
+	v3 min = sub( p, e );
+	v3 max = add( p, e );
+	if ( b.x > max.x ) b.x = max.x;
+	if ( b.y > max.y ) b.y = max.y;
+	if ( b.z > max.z ) b.z = max.z;
+	if ( b.x < min.x ) b.x = min.x;
+	if ( b.y < min.y ) b.y = min.y;
+	if ( b.z < min.z ) b.z = min.z;
+	return b;
+}
+
+void DoPlayerCollision( )
+{
+	for ( int i = 0; i < cube_count; ++i )
+	{
+		Cube cube = cubes[ i ];
+		v3 a = player_position;
+		v3 b = CalcCubeL( cube, player_position );
+		v3 n = sub( b, a );
+		float d = len( n );
+		if ( d < 4.0f && d != 0.0f )
+		{
+			float id = 1.0f / d;
+			id *= 4.0f - d;
+			n.x *= id;
+			n.y *= id;
+			n.z *= id;
+			a = sub( a, n );
+			player_position = a;
+			SetPlayerPositionFromC( L, a.x, a.y, a.z );
+			n = norm( sub( b, a ) );
+			float contribution = dot( n, player_velocity );
+			n.x *= contribution;
+			n.y *= contribution;
+			n.z *= contribution;
+			player_velocity = sub( player_velocity, n );
+			printf( "n: %f %f %f\n", n.x, n.y, n.z );
+			printf( "player_velocity: %f %f %f\n", player_velocity.x, player_velocity.y, player_velocity.z );
+			SetPlayerVelocityFromC( L, player_velocity.x, player_velocity.y, player_velocity.z );
+		}
+	}
+}
+
 int main( )
 {
 	SetCDW( );
@@ -896,13 +1016,16 @@ int main( )
 	// init lua
 	L = luaL_newstate( );
 	luaL_openlibs( L );
-	Dofile( L, "src/core/init.lua" );
 	Register( L, PushMesh );
 	Register( L, PushVert_internal );
 	Register( L, PushInstance_internal );
 	Register( L, UpdateCam );
 	Register( L, Flush );
 	Register( L, FlushVerts );
+	Register( L, AddCubeCollider );
+	Register( L, SetPlayerPosition );
+	Register( L, SetPlayerVelocity );
+	Dofile( L, "src/core/init.lua" );
 	InitMeshes( );
 	MakeMeshes( L );
 
@@ -930,6 +1053,8 @@ int main( )
 				dc->count = 0;
 			}
 		}
+
+		DoPlayerCollision( );
 
 		tgFlush( ctx, PookSwapBuffers );
 		TG_PRINT_GL_ERRORS( );
