@@ -11,4 +11,11 @@ function v3:__call(x, y, z)
 	return o
 end
 
+function v3:normalize()
+	magnitude = math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+	self.x = self.x / magnitude
+	self.y = self.y / magnitude
+	self.z = self.z / magnitude
+end
+
 return v3

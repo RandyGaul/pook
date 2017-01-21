@@ -14,6 +14,10 @@ function KeyPressed( k )
 	return Key( k ) == KEY_PRESSED
 end
 
+function KeyDown(k)
+	return Key(k) == KEY_PRESSED or Key(k) == KEY_REPEAT
+end
+
 function SetKey( k, v )
 	INPUT_KEYS[ k ] = v
 end

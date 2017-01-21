@@ -278,13 +278,16 @@ void LookAt( float* m, v3 eye, v3 center, v3 up )
 
 int UpdateCam( lua_State *L )
 {
-	float x = (float)luaL_checknumber(L, -3);
-	float y = (float)luaL_checknumber(L, -2);
-	float z = (float)luaL_checknumber(L, -1);
+	float eyeX = (float)luaL_checknumber(L, -6);
+	float eyeY = (float)luaL_checknumber(L, -5);
+	float eyeZ = (float)luaL_checknumber(L, -4);
+	float frontX = (float)luaL_checknumber(L, -3);
+	float frontY = (float)luaL_checknumber(L, -2);
+	float frontZ = (float)luaL_checknumber(L, -1);
 	lua_settop(L, 0);
 
-	v3 eye = V3(5, 0, 0); // send this in from lua later
-	LookAt(cam, eye, add( eye, V3( x, y, z ) ), V3(0, 1, 0));
+	v3 eye = V3(eyeX, eyeY, eyeZ);
+	LookAt(cam, eye, add( eye, V3( frontX, frontY, frontZ ) ), V3(0, 1, 0));
 	UpdateMvp();
 	return 0;
 }

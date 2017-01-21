@@ -6,15 +6,16 @@ end
 camInitialized = true
 
 sensitivity = .3
-maxAbsDeg = 250
+maxAbsDeg = 360
+camDist = 5
 up = {x = 0, y = 1, z = 0}
 
 local function clampDeg(deg)
-	-- if deg < -maxAbsDeg then
-	-- 	return -maxAbsDeg
-	-- elseif deg > maxAbsDeg then
-	-- 	return maxAbsDeg
-	-- end
+	if deg < -maxAbsDeg then
+		return -maxAbsDeg
+	elseif deg > maxAbsDeg then
+		return maxAbsDeg
+	end
 
 	return deg
 end
@@ -24,7 +25,7 @@ local function deg2Rad(deg)
 end
 
 function handleMouseMovement(x, y)
-	if prevX == x and prevY == y then return end
+	if not player or  (prevX == x and prevY == y) then return end
 
 	if prevX == nil then
 		dx, dy = 0, 0
@@ -40,12 +41,15 @@ function handleMouseMovement(x, y)
 	vy = math.sin(pitchRad)
 	vz = math.sin(yawRad) * math.cos(pitchRad)
 
-	-- create a vector helper later
-	magnitude = math.sqrt(vx * vx + vy * vy + vz * vz)
-	front = {x = vx / magnitude, y = vy / magnitude, z = vz / magnitude}
+	front = v3(vx, vy, vz)
+	front:normalize()
 
 	prevX, prevY = x, y
 
 	-- print("front is {x: "..front.x..", y: "..front.y..", z: "..front.z.."}")
-	UpdateCam(front.x, front.y, front.z)
+	UpdateCam(player.p.x, player.p.y, player.p.z + 4, front.x, front.y, front.z)
+end
+
+function UpdateCamLua()
+	-- calculate new eye position and new lookat position here
 end

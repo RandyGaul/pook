@@ -9,5 +9,6 @@ if not firstLoadComplete or KeyPressed("r") then
 	dofile("src/util/pooler.lua")
 	dofile("src/entities/cow.lua")
 	dofile("src/entities/platform.lua")
+	dofile("src/entities/player.lua")
 	firstLoadComplete = true
 end
