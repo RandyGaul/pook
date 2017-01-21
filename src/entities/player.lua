@@ -63,8 +63,7 @@ local function Update(self)
 		self.v.x = -scaledRight.x
 	end
 	if KeyPressed(KEY_SPACE) and self:TouchingGround() then
-		self.v.y = JumpHeight( 5 )
-		print( JumpHeight( 5 ) )
+		self.v.y = JumpHeight( 10 )
 	end
 
 	grav = v3( 0, -GRAVITY, 0 )

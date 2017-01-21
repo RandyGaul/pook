@@ -32,10 +32,6 @@ function GeneratePlatform()
 	platform.p = v3(0, 0, 0)
 	platform.s = v3(0, 0, 0)
 
-	local p = platform.p
-	local s = platform.s
-	AddCubeCollider( s.x, s.y, s.z, p.x, p.y, p.z )
-
 	platform.GenerateMesh = GenerateMesh
 	platform.Render = Render
 	platform.Update = Update
@@ -50,10 +46,14 @@ function GeneratePlatform()
 		self.s.x = sx
 		self.s.y = sy
 		self.s.z = sz
-	
+
 		coin.p.x = x
 		coin.p.z = z
 		coin.p.y = y + self.s.y
+
+		local p = platform.p
+		local s = platform.s
+		AddCubeCollider( s.x, s.y, s.z, p.x, p.y, p.z )
 	end
 
 	return platform

@@ -5,7 +5,7 @@ s = math.sin
 c = math.cos
 world = {}
 math.randomseed(os.time())
-GRAVITY = 5
+GRAVITY = 100
 
 function JumpHeight( height )
     return math.sqrt( 2 * GRAVITY * height )
