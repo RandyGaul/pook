@@ -704,6 +704,9 @@ int PushInstance( lua_State *L )
 	for ( int i = 0; i < mesh->vert_count; ++i )
 	{
 		Vertex v = mesh->verts[ i ];
+		v.position.x *= sx;
+		v.position.y *= sy;
+		v.position.z *= sz;
 		v.position = add( v.position, p );
 		PushTransformedVert( v, call );
 	}

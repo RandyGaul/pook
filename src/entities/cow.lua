@@ -4,8 +4,13 @@ function GenerateCow()
 	cow.pos = v3(math.random(-5, 5), math.random(-5, 5), math.random(-5, 5))
 
 	cow.GenerateMesh = function(self)
+		if GeneratedMeshes["cow"] ~= nil then
+			return
+		end
+
 		PushMeshLua(self.verts.triangleVerts, "triangle")
 		PushMeshLua(self.verts.quadVerts, "quad")
+		GeneratedMeshes["cow"] = true
 	end
 
 	cow.Render = function(self)

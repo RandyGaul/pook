@@ -1,3 +1,7 @@
+if GeneratedMeshes == nil then
+	GeneratedMeshes = {}
+end
+
 function PushVert( x, y, z, cx, cy, cz, nx, ny, nz )
 	cx = cx or 1; cy = cy or 1; cz = cz or 1
 	nx = nx or 0; ny = ny or 1; nz = nz or 0

@@ -1,6 +1,8 @@
 local ObjLoader = {}
 
-VertCache = {}
+if VertCache == nil then
+	VertCache = {}
+end
 
 local function loadVerts(filename)
 	local verts = {}
