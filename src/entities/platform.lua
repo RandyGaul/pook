@@ -29,18 +29,28 @@ end
 function GeneratePlatform()
 	local platform = {}
 
-	platform.p = v3(math.random(0, 10), math.random(-3, 3), math.random(-10, 0))
-	platform.s = v3(math.random(2, 4), math.random(3, 6), math.random(2, 4))
+	platform.p = v3(0, 0, 0)
+	platform.s = v3(0, 0, 0)
 
 	platform.GenerateMesh = GenerateMesh
 	platform.Render = Render
 	platform.Update = Update
 
-	local coin = cowPool:get()
-
-	coin.p.x = platform.p.x
-	coin.p.z = platform.p.z
-	coin.p.y = platform.p.y + platform.s.y
+	-- function platform.init() end
+	platform.Init = function(self, x, y, z, sx, sy, sz)
+		print("x: "..x..", y:"..y..", z:"..z..", sx:"..sx..", sy:"..sy..", sz:"..sz)
+		local coin = cowPool:get()
+		self.p.x = x
+		self.p.y = y
+		self.p.z = z
+		self.s.x = sx
+		self.s.y = sy
+		self.s.z = sz
+	
+		coin.p.x = x
+		coin.p.z = z
+		coin.p.y = y + self.s.y
+	end
 
 	return platform
 end

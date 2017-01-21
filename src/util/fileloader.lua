@@ -11,5 +11,6 @@ if not firstLoadComplete or KeyPressed("r") then
 	dofile("src/entities/platform.lua")
 	dofile("src/entities/player.lua")
 	dofile("src/entities/skybox.lua")
+	dofile("src/levelgenerator.lua")
 	firstLoadComplete = true
 end
