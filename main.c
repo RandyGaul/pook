@@ -33,6 +33,47 @@ struct Vertex;
 
 lua_State* L;
 
+typedef struct
+{
+	float x;
+	float y;
+	float z;
+} v3;
+
+typedef struct
+{
+	v3 x;
+	v3 y;
+	v3 z;
+} m3;
+
+typedef struct
+{
+	m3 r;
+	v3 p;
+} tx;
+
+typedef struct
+{
+	v3 position;
+	v3 color;
+	v3 normal;
+} Vertex;
+
+typedef struct
+{
+	int vert_count;
+	Vertex* verts;
+} Mesh;
+
+typedef struct
+{
+	tgRenderable r;
+	int count;
+	int capacity;
+	Vertex* verts;
+} DrawCall;
+
 void ErrorCB( int error, const char* description )
 {
 	fprintf( stderr, "Error: %s\n", description );
@@ -43,6 +84,8 @@ void pcall_do( int arg_count, int ret_value_count );
 void HandleMouseMovement( lua_State* L, float x, float y );
 void UpdateMvp();
 void m4Mul( float* a, float* b, float* c );
+int FindRender( const char* name );
+void PushTransformedVert( Vertex v, DrawCall* call );
 
 void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 {
@@ -71,26 +114,6 @@ void PookSwapBuffers( )
 {
 	glfwSwapBuffers( window );
 }
-
-typedef struct
-{
-	float x;
-	float y;
-	float z;
-} v3;
-
-typedef struct
-{
-	v3 x;
-	v3 y;
-	v3 z;
-} m3;
-
-typedef struct
-{
-	m3 r;
-	v3 p;
-} tx;
 
 v3 V3( float x, float y, float z )
 {
@@ -332,13 +355,6 @@ void m4Identity( float* m )
 	m[ 15 ] = 1.0f;
 }
 
-typedef struct
-{
-	v3 position;
-	v3 color;
-	v3 normal;
-} Vertex;
-
 void* ReadFileToMemory( const char* path, int* size )
 {
 	void* data = 0;
@@ -514,20 +530,6 @@ void HandleMouseMovement( lua_State* L, float x, float y )
 	pcall_do( 2, 0 );
 }
 
-typedef struct
-{
-	int vert_count;
-	Vertex* verts;
-} Mesh;
-
-typedef struct
-{
-	tgRenderable r;
-	int count;
-	int capacity;
-	Vertex* verts;
-} DrawCall;
-
 #define MAX_MESHES 1024
 #define MAX_DRAW_CALLS 1024
 typedef struct
@@ -579,6 +581,24 @@ int PushMesh( lua_State *L )
 	mesh->verts = (Vertex*)malloc( size );
 	memcpy( mesh->verts, meshes.temp_verts, size );
 	meshes.mesh_names[ i ] = strdup( name );
+	meshes.temp_count = 0;
+	return 0;
+}
+
+int FlushVerts( lua_State *L )
+{
+	LUA_ERROR_IF( L, lua_gettop( L ) != 1, "PushMesh expects 1 parameters, a string" );
+	const char* name = luaL_checkstring( L, -1 );
+	lua_settop( L, 0 );
+	int index = FindRender( name );
+	DrawCall* dc = meshes.calls + index;
+
+	for ( int i = 0; i < meshes.temp_count; ++i )
+	{
+		Vertex v = meshes.temp_verts[ i ];
+		PushTransformedVert( v, dc );
+	}
+
 	meshes.temp_count = 0;
 	return 0;
 }
@@ -866,6 +886,7 @@ int main( )
 	Register( L, PushInstance );
 	Register( L, UpdateCam );
 	Register( L, Flush );
+	Register( L, FlushVerts );
 	InitMeshes( );
 	MakeMeshes( L );
 
@@ -895,7 +916,6 @@ int main( )
 		}
 
 		tgFlush( ctx, PookSwapBuffers );
-		printf( "final" );
 		TG_PRINT_GL_ERRORS( );
 	}
 

@@ -682,7 +682,6 @@ static void tgRender( tgDrawCall* call )
 		uint32_t offset = attribute->offset;
 
 				TG_PRINT_GL_ERRORS( );
-		printf( "%d\n", location );
 		glEnableVertexAttribArray( location );
 		glVertexAttribPointer( location, size, type, GL_FALSE, vertexStride, (void*)((size_t)offset) );
 				TG_PRINT_GL_ERRORS( );

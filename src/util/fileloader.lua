@@ -10,5 +10,6 @@ if not firstLoadComplete or KeyPressed("r") then
 	dofile("src/entities/cow.lua")
 	dofile("src/entities/platform.lua")
 	dofile("src/entities/player.lua")
+	dofile("src/wave.lua")
 	firstLoadComplete = true
 end
