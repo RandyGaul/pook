@@ -1,7 +1,6 @@
-playerSpeed = 10
-initialJumpVelocity = 35
-downwardVelocity = -30
-WORLD_BOTTOM = 0
+playerSpeed = 40
+WORLD_BOTTOM = -1000
+JUMP_HEIGHT = 20
 
 function SetPlayerPositionFromC( x, y, z )
 	if not player then return end
@@ -18,6 +17,7 @@ function SetPlayerVelocityFromC( x, y, z )
 end
 
 function SetPlayerTouchingGround( val )
+	if val == nil then print"WTFFFFF" end
 	player.touching_ground = val
 end
 
@@ -59,7 +59,7 @@ local function Update(self)
 		self.v.x = -scaledRight.x
 	end
 	if KeyPressed(KEY_SPACE) and self:TouchingGround() then
-		self.v.y = JumpHeight( 10 )
+		self.v.y = JumpHeight( JUMP_HEIGHT )
 		self.touching_ground = false
 	end
 
@@ -68,8 +68,8 @@ local function Update(self)
 	self.p = self.p + self.v * dt
 
 	-- ghetto ground collision
-	if self.p.y < 0 then
-		self.p.y = 0
+	if self.p.y < WORLD_BOTTOM then
+		self.p.y = WORLD_BOTTOM
 		self.v.y = 0
 	end
 

@@ -46,7 +46,7 @@ end
 function GenerateLevel(numPlatforms)
 	--
 	local initialPlatform = platformPool:get()
-	initialPlatform:Init(0, 0, 0, 1, 1, 1)
+	initialPlatform:Init(0, -2, 0, 3, 3, 3)
 
 	for i = 1, numPlatforms - 1 do
 		ConfigurePlatform(platformPool:get())

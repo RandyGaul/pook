@@ -56,8 +56,8 @@ function GeneratePlatform()
 		coin.p.z = z
 		coin.p.y = y + self.s.y
 
-		local p = platform.p
-		local s = platform.s
+		local p = self.p
+		local s = self.s
 		AddCubeCollider( s.x, s.y, s.z, p.x, p.y, p.z )
 
 		table.insert(platforms, self) -- clean this up if we switch levels.
