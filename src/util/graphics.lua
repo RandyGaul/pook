@@ -22,16 +22,20 @@ function MakeMeshes( )
 	end
 end
 
-function PushMeshLua(verts, name)
+function PushMeshLua(verts, name, color)
 	for i, j in ipairs(verts) do
-		if i % 3 == 0 then
-			PushVert(j[1], j[2], j[3], 1, 0.4, 0.8)
-		elseif i % 3 == 1 then
-			PushVert(j[1], j[2], j[3], 0.5, 1, 0.4)
-		elseif i % 3 == 2 then
-			PushVert(j[1], j[2], j[3], 0.25, 0.1, 1)
-		else
-			PushVert(j[1], j[2], j[3], 1, .25, 0)
+		if color ~= nil then
+			PushVert(j[1], j[2], j[3], color[1], color[2], color[3])
+		else		
+			if i % 3 == 0 then
+				PushVert(j[1], j[2], j[3], 1,  0.4, 0.8)
+			elseif i % 3 == 1 then
+				PushVert(j[1], j[2], j[3], 0.5, 1, 0.4)
+			elseif i % 3 == 2 then
+				PushVert(j[1], j[2], j[3], 0.25, 0.1, 1)
+			else
+				PushVert(j[1], j[2], j[3], 1, .25, 0)
+			end
 		end
 	end
 

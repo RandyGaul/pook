@@ -11,7 +11,7 @@ function GenerateCow()
 			return
 		end
 
-		PushMeshLua(self.verts, "triangle")
+		PushMeshLua(self.verts, "triangle", {1, 1, 0})
 
 		GeneratedMeshes["cow"] = true
 	end
