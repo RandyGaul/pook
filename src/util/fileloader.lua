@@ -10,6 +10,7 @@ if not firstLoadComplete or KeyPressed("r") then
 	dofile("src/util/spheregenerator.lua")
 	dofile("src/entities/cow.lua")
 	dofile("src/entities/platform.lua")
+	dofile("src/entities/shark.lua")
 	dofile("src/entities/player.lua")
 	dofile("src/entities/skybox.lua")
 	dofile("src/levelgenerator.lua")

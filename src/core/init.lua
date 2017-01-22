@@ -23,5 +23,4 @@ player = GeneratePlayer()
 
 skybox = GenerateSkybox()
 GenerateLevel(30)
-
--- add init stuff below
+sharkPool = ObjectPooler(7, 7, 2, GenerateShark)

@@ -3,6 +3,7 @@ COIN_SPIN_SPEED = math.pi * 2 * 0.1
 function GenerateCow()
 	local cow = {}
 	cow.verts = ObjLoader.getVerts("assets/models/coin.obj")
+	print("there are "..#cow.verts.." cow verts")
 	cow.p = v3(math.random(-5, 5), math.random(-5, 5), math.random(-5, 5))
 	cow.spinAngle = 0
 	cow.alive = true

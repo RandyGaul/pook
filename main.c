@@ -1349,8 +1349,8 @@ int main( )
 	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
-	int width = 600;
-	int height = 600;
+	int width = 1200;
+	int height = 1200;
 	window = glfwCreateWindow( width, height, "pook", NULL, NULL );
 
 	if ( !window )
@@ -1369,7 +1369,7 @@ int main( )
 	gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress );
 	glfwSwapInterval( 1 );
 
-	glfwGetFramebufferSize( window, &width, &height );
+	// glfwGetFramebufferSize( window, &width, &height );
 	Reshape( window, width, height );
 
 	void* ctx = tgMakeCtx( 32 );

@@ -22,7 +22,7 @@ enum
 	TG_UNKNOWN,
 };
 
-#define FBO_ON 0
+#define FBO_ON 1
 
 typedef struct
 {

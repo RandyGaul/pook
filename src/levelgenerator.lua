@@ -38,6 +38,10 @@ local function ConfigurePlatform( platform)
 		if not hasCollision then
 			platform:Init(newPos.x, newPos.y, newPos.z, newScale.x, newScale.y, newScale.z)
 			success = true
+			if newPos.x - newScale.x < levelMinX then levelMinX = newPos.x - newScale.x end
+			if newPos.x + newScale.x > levelMaxX then levelMaxX = newPos.x + newScale.x end
+			if newPos.z - newScale.z < levelMinZ then levelMinZ = newPos.z - newScale.z end
+			if newPos.z + newScale.z > levelMaxZ then levelMaxZ = newPos.z + newScale.z end
 		end
 	end
 
@@ -46,6 +50,10 @@ end
 function GenerateLevel(numPlatforms)
 	local initialPlatform = platformPool:get()
 	initialPlatform:Init(0, -2, 0, 5, 5, 5)
+	levelMinX = -5
+	levelMaxX = 5
+	levelMinZ = -5
+	levelMaxZ = 5
 
 	for i = 1, numPlatforms - 1 do
 		ConfigurePlatform(platformPool:get())
