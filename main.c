@@ -1024,6 +1024,115 @@ void DoPlayerCollision( )
 
 Vertex wave_verts[ WAVE_VERT_COUNT ];
 
+#define WAVE_PROPOGATION 0.0001f
+#define WAVE_STIFFNESS 0.001f
+#define WAVE_INITIAL_H 0.0f
+
+typedef struct
+{
+	int a;
+	int b;
+} WaveEdge;
+
+typedef struct
+{
+	float h;
+	float h_old;
+	float v;
+} WaveParticle;
+
+#define WAVE_PARTICLE_COUNT (WAVE_W * (WAVE_H + 1))
+int edge_count;
+WaveEdge wave_edges[ WAVE_W * WAVE_H * 4 ];
+WaveParticle wave_particles[ WAVE_PARTICLE_COUNT ];
+
+void InitWaveParticles( )
+{
+    int hc = (WAVE_W - 1) * WAVE_H;
+    int vc = WAVE_W * (WAVE_H - 1);
+	edge_count = hc + vc;
+
+	for ( int i = 0; i < hc; ++i )
+	{
+		WaveEdge* e = wave_edges + i;
+		e->a = i;
+		e->b = i + 1;
+	}
+
+	for ( int i = 0; i < vc; ++i )
+	{
+		WaveEdge* e = wave_edges + (i + hc);
+		e->a = i;
+		e->b = i + WAVE_W;
+	}
+}
+
+void SolveEdges( )
+{
+    for ( int i = 0; i < edge_count; ++i )
+    {
+		WaveEdge* e = wave_edges + i;
+		WaveParticle* a = wave_particles + e->a;
+		WaveParticle* b = wave_particles + e->b;
+
+		float d = b->h - a->h;
+		d *= WAVE_PROPOGATION;
+
+		a->h += d;
+		b->h -= d;
+    }
+}
+
+void SolveWaveParticles( float dt )
+{
+	// integration
+	for( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
+	{
+		WaveParticle* p = wave_particles + i;
+		p->h += dt * p->v;
+	}
+
+	for ( int i = 0; i < 10; ++i )
+		SolveEdges( );
+
+	// solve depths
+	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
+	{
+		WaveParticle* p = wave_particles + i;
+		float x = WAVE_INITIAL_H - p->h;
+		p->h += x * WAVE_STIFFNESS;
+	}
+
+	// vel fixup
+	float inv_dt = 1.0f / dt;
+	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
+	{
+		WaveParticle* p = wave_particles + i;
+		float delta = p->h - p->h_old;
+		p->v = inv_dt * delta;
+		p->h_old = p->h;
+	}
+}
+
+void DebugDrawWaveParticles( )
+{
+	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
+	{
+		WaveParticle* p = wave_particles + i;
+		float h = p->h;
+		float x = i % WAVE_W;
+		float z = i / WAVE_W;
+
+		pcall_setup( "PushInstance" );
+		lua_pushstring( L, "simple" );
+		lua_pushstring( L, "playerTriangles" );
+		lua_pushnumber( L, (lua_Number)x );
+		lua_pushnumber( L, (lua_Number)h );
+		lua_pushnumber( L, (lua_Number)z );
+		pcall_do( 5, 0 );
+	}
+}
+
 void AddWaveTri( int i, v3 a, v3 b, v3 c )
 {
 	Vertex va, vb, vc;
@@ -1267,7 +1376,7 @@ int main( )
 
 		if ( mouse_moved )
 		{
-			//glfwSetCursorPos( window, 600, 400 );
+			//glfwSetCursorPos( window, 600, 600 );
 			mouse_moved = 0;
 		}
 		tgFlush( ctx, PookSwapBuffers );
