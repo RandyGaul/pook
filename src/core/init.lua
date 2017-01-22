@@ -16,6 +16,6 @@ platformPool = ObjectPooler(15, 50, 2, GeneratePlatform)
 player = GeneratePlayer()
 
 --skybox = GenerateSkybox()
-GenerateLevel(30)
+GenerateLevel(50)
 
 -- add init stuff below

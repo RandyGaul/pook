@@ -1024,22 +1024,23 @@ void AddWaveTri( int i, v3 a, v3 b, v3 c )
 
 void AddWaveQuad( int i, int x, int z )
 {
+	int y = -50;
 	int dim = 1;
 	x -= WAVE_W / 2;
 	z -= WAVE_H / 2;
-	int scale = 5;
+	int scale = 35;
 	x *= scale;
 	z *= scale;
 	dim *= scale;
-	v3 a = V3( x, 0, z );
-	v3 b = V3( x + dim, 0, z );
-	v3 c = V3( x + dim, 0, z + dim );
+	v3 a = V3( x, y, z );
+	v3 b = V3( x + dim, y, z );
+	v3 c = V3( x + dim, y, z + dim );
 	AddWaveTri( i, a, c, b );
 	AddWaveTri( i + 3, a, b, c );
 
-	a = V3( x, 0, z );
-	b = V3( x, 0, z + dim );
-	c = V3( x + dim, 0, z + dim );
+	a = V3( x, y, z );
+	b = V3( x, y, z + dim );
+	c = V3( x + dim, y, z + dim );
 	AddWaveTri( i + 6, a, b, c );
 	AddWaveTri( i + 9, a, c, b );
 }

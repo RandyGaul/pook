@@ -44,17 +44,20 @@ function GeneratePlatform()
 		-- print("y:"..y)
 		-- print("z:"..z)
 		-- print("x: "..x..", y:"..y..", z:"..z..", sx:"..sx..", sy:"..sy..", sz:"..sz)
-		local coin = cowPool:get()
+		
 		self.p.x = x
 		self.p.y = y
 		self.p.z = z
 		self.s.x = sx
 		self.s.y = sy
 		self.s.z = sz
-
-		coin.p.x = x
-		coin.p.z = z
-		coin.p.y = y + self.s.y
+		
+		if math.random(1, 3) > 1 then
+			local coin = cowPool:get()
+			coin.p.x = x
+			coin.p.z = z
+			coin.p.y = y + self.s.y
+		end
 
 		local p = self.p
 		local s = self.s
