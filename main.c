@@ -1051,9 +1051,21 @@ void DoPlayerCollision( )
 #define WAVE_H 30
 #define WAVE_COLOR V3( 0.6f, 0.75f, 0.95f )
 
-#define WAVE_PROPOGATION 0.01f
-#define WAVE_STIFFNESS 0.001f
+#define WAVE_PROPOGATION 0.001f
+#define WAVE_STIFFNESS 0.0001f
 #define WAVE_INITIAL_H 0.0f
+
+#define WAVE_OFFSET_X (0.0f)
+#define WAVE_OFFSET_Y (-150.0f)
+#define WAVE_OFFSET_Z (0.0f)
+#define WAVE_SCALE_X  (30.0f)
+#define WAVE_SCALE_Y  (30.0f)
+#define WAVE_SCALE_Z  (30.0f)
+
+#define WAVE_HALF_X (WAVE_W * WAVE_SCALE_X / 2)
+#define WAVE_HALF_Z (WAVE_H * WAVE_SCALE_Z / 2)
+
+float WAVE_HEIGHT_VARIANCE = 0.0f;
 
 typedef struct
 {
@@ -1189,12 +1201,6 @@ void SolveWave( float dt )
 	}
 }
 
-#define WAVE_OFFSET_X (0.0f)
-#define WAVE_OFFSET_Z (0.0f)
-#define WAVE_SCALE_X  (10.0f)
-#define WAVE_SCALE_Y  (10.0f)
-#define WAVE_SCALE_Z  (10.0f)
-
 v3 GetParticlePosition( int i )
 {
 	WaveParticle* p = wave_particles + i;
@@ -1204,13 +1210,11 @@ v3 GetParticlePosition( int i )
 	z *= WAVE_SCALE_Z;
 	x += WAVE_OFFSET_X;
 	z += WAVE_OFFSET_Z;
-	return V3( x, p->h * WAVE_SCALE_Y, z );
+	return V3( x, p->h * WAVE_SCALE_Y + WAVE_OFFSET_Y + WAVE_HEIGHT_VARIANCE, z );
 }
 
-void MakeWave( v3 at )
+void MakeWave( v3 at, float radius, float force )
 {
-	float radius = 20.0f;
-	float force = 5.0f;
 	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
 	{
 		WaveParticle* p = wave_particles + i;
@@ -1218,28 +1222,25 @@ void MakeWave( v3 at )
 		float l = len( sub( pos, at ) );
 		if ( l < radius )
 		{
-			float factor = (radius - l) / radius;
 			p->h_old = p->h;
-			p->h += force * factor;
+			p->h += force;
 		}
 	}
 }
-
-#define WAVE_AMPLITUDE 30.0f
 
 v3 CalcWaveColor( v3 p )
 {
 	float y = p.y;
 	y -= initialWaveY;
-	y += WAVE_AMPLITUDE;
-	y /= WAVE_AMPLITUDE * 2.0f;
+	y += WAVE_OFFSET_Y;
+	y /= WAVE_OFFSET_Y * 2.0f;
 	v3 red = V3( 0.8f, 0.2f, 0.4f );
 	v3 blue = WAVE_COLOR;
 	v3 c = lerp( red, blue, y );
 	float l = len( sub( p, player_position ) );
-	if ( l < 20.0f )
+	if ( l < 100.0f )
 	{
-		float t = l / 20.0f;
+		float t = l / 100.0f;
 		v3 black = V3( 1, 0, 0 );
 		c = lerp( black, c, t );
 	}
@@ -1296,7 +1297,7 @@ int DetectWaveCollision( )
 	{
 		v3 b = GetParticlePosition( i );
 		float d = len( sub( b, a ) );
-		if ( d < (player_radius + 2.0f) )
+		if ( d < (player_radius + 10.0f) )
 		{
 			found = 1;
 			break;
@@ -1326,6 +1327,11 @@ void ResetGameState()
 	Register( L, SetPlayerVelocity );
 	Register( L, AdjustGameTime );
 	Dofile( L, "src/core/init.lua" );
+}
+
+int RandomInt( int lo, int hi )
+{
+	return lo + rand( ) / (RAND_MAX / (hi - lo + 1) + 1);
 }
 
 int main( )
@@ -1388,21 +1394,6 @@ int main( )
 	m4Mul( projection, cam, mvp );
 	UpdateMvp();
 
-	// init lua
-	// L = luaL_newstate( );
-	// luaL_openlibs( L );
-	// Register( L, PushMesh );
-	// Register( L, PushVert_internal );
-	// Register( L, PushInstance_internal );
-	// Register( L, UpdateCam );
-	// Register( L, Flush );
-	// Register( L, FlushVerts );
-	// Register( L, AddCubeCollider );
-	// Register( L, ClearCubes );
-	// Register( L, SetPlayerPosition );
-	// Register( L, SetPlayerVelocity );
-	// Register( L, AdjustGameTime );
-	// Dofile( L, "src/core/init.lua" );
 	InitMeshes( );
 	MakeMeshes( L );
 
@@ -1417,6 +1408,7 @@ int main( )
 	tgLoadShader(&postProcessShader, vs, ps);
 	fbo.shader = postProcessShader;
 
+	double time_accum = 0;
 	glClearColor( 0.0f, 0.35f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
 	{
@@ -1433,8 +1425,17 @@ int main( )
 		SolveWave( dt );
 		DrawWave( );
 
-		if ( !(frame_count % (60)) )
-			MakeWave( player_position );
+		time_accum += dt;
+		WAVE_HEIGHT_VARIANCE = sinf( -time_accum / (3.14159f * 2.0f) ) * 100.0f;
+		printf( "%f\n", WAVE_HEIGHT_VARIANCE );
+
+		float radius = (float)(WAVE_HALF_X + WAVE_HALF_Z) / 16.0f;
+		int x = RandomInt( -WAVE_HALF_X, WAVE_HALF_X );
+		int z = RandomInt( -WAVE_HALF_Z, WAVE_HALF_Z );
+		v3 hit_spot = V3( x, WAVE_OFFSET_Y, z );
+		int force_int = RandomInt( 0, 100 );
+		if ( !(frame_count % 30) )
+			MakeWave( hit_spot, radius, 0.5f );
 
 		for ( int i = 0; i < meshes.render_count; ++i )
 		{
@@ -1452,6 +1453,7 @@ int main( )
 				dc->count = 0;
 			}
 		}
+
 		glfwSetCursorPos( window, 600, 600 );
 		if ( mouse_moved )
 		{
