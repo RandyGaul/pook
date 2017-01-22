@@ -1,5 +1,6 @@
-SHARK_BASE_Y = -40
+SHARK_BASE_Y = -150
 SHARK_SPEED = 60
+SHARK_RADIUS = 2
 
 function PlaceShark(self)
 	self.p.x = math.random(levelMinX, levelMaxX)
@@ -8,7 +9,7 @@ function PlaceShark(self)
 end
 
 function GetJumpTarget()
-	return math.random(40, 60)
+	return math.random(40, 90)
 end
 
 function GenerateShark()
@@ -52,6 +53,8 @@ function GenerateShark()
 			self.nextJumpTime = os.time() + math.random(3, 6)
 		end
 	end
+
+	table.insert(sharks, shark)
 
 	return shark
 end

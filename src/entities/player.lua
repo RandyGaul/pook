@@ -1,6 +1,6 @@
 playerSpeed = 40
 playerRadius = 7
-WORLD_BOTTOM = -1000
+WORLD_BOTTOM = -5000
 JUMP_HEIGHT = 20
 
 function SetPlayerPositionFromC( x, y, z )
@@ -78,6 +78,7 @@ local function Update(self)
 	if KeyPressed(KEY_SPACE) and math.abs(self.v.y) < .01 then
 		self.v.y = JumpHeight( JUMP_HEIGHT )
 		self.touching_ground = false
+		PlayJump()
 	end
 
 	if not self:TouchingGround() then
@@ -106,6 +107,14 @@ local function Update(self)
 			v.alive = false
 			THE_COINS[ k ] = nil
 			AdjustGameTime(-10)
+			PlayCoin()
+		end
+	end
+
+	for k, v in pairs(sharks) do
+		local dist = length(v.p - player.p)
+		if dist < (playerRadius + SHARK_RADIUS) then
+			ResetGameFromLua()
 		end
 	end
 end

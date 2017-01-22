@@ -1,4 +1,6 @@
 
+#include <Windows.h>
+
 #include <glad/glad.h>
 #include <glfw/glfw_config.h>
 #include <glfw/glfw3.h>
@@ -8,6 +10,12 @@
 
 #define TT_IMPLEMENTATION
 #include "tinytime.h"
+
+#define STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"
+
+#define TS_IMPLEMENTATION
+#include "tinysound.h"
 
 #if defined(__APPLE__)
 	#include <lua.h>
@@ -1288,6 +1296,12 @@ void HitWaveCB( )
 	ResetGameState();
 }
 
+int ResetGameFromLua( lua_State* L )
+{
+	ResetGameState();
+	return 0;
+}
+
 int DetectWaveCollision( )
 {
 	int found = 0;
@@ -1310,6 +1324,22 @@ int DetectWaveCollision( )
 	return found;
 }
 
+tsContext* ts_ctx;
+tsPlaySoundDef jump_def;
+tsPlaySoundDef coin_def;
+
+int PlayJump(lua_State*L)
+{
+	tsPlaySound(ts_ctx, jump_def);
+	return 0;
+}
+
+int PlayCoin(lua_State* L)
+{
+	tsPlaySound(ts_ctx, coin_def);
+	return 0;
+}
+
 void ResetGameState()
 {
 	t = 0;
@@ -1326,6 +1356,9 @@ void ResetGameState()
 	Register( L, SetPlayerPosition );
 	Register( L, SetPlayerVelocity );
 	Register( L, AdjustGameTime );
+	Register(L, PlayCoin);
+	Register(L, PlayJump);
+	Register(L, ResetGameFromLua);
 	Dofile( L, "src/core/init.lua" );
 }
 
@@ -1336,6 +1369,26 @@ int RandomInt( int lo, int hi )
 
 int main( )
 {
+	int frequency = 44100; // a good standard frequency for playing commonly saved OGG + wav files
+	int latency_in_Hz = 15; // a good latency, too high will cause artifacts, too low will create noticeable delays
+	int buffered_seconds = 5; // number of seconds the buffer will hold in memory. want this long enough in case of frame-delays
+	int use_playing_pool = 1; // non-zero uses high-level API, 0 uses low-level API
+	int num_elements_in_playing_pool = use_playing_pool ? 100 : 0; // pooled memory array size for playing sounds
+
+	// initializes direct sound and allocate necessary memory
+	ts_ctx = tsMakeContext( GetConsoleWindow( ), frequency, latency_in_Hz, buffered_seconds, num_elements_in_playing_pool );
+
+	int sample_rate;
+	tsLoadedSound song = tsLoadOGG( "assets/sounds/song.ogg", &sample_rate );
+	tsPlaySoundDef song_def = tsMakeDef( &song );
+	song_def.looped = 1;
+	tsPlaySound( ts_ctx, song_def );
+
+	tsLoadedSound jump = tsLoadWAV("assets/sounds/jump.wav");
+	tsLoadedSound coin = tsLoadWAV("assets/sounds/coin.wav");
+	jump_def = tsMakeDef(&jump);
+	coin_def = tsMakeDef(&coin);
+
 	SetCDW( );
 	ResetGameState();
 
@@ -1421,13 +1474,14 @@ int main( )
 		DoPlayerCollision( );
 		if ( !DetectWaveCollision( ) ) WAVE_DEBOUNCE = 0;
 		Tick( L, dt );
+		tsMix( ts_ctx );
 
 		SolveWave( dt );
 		DrawWave( );
 
 		time_accum += dt;
 		WAVE_HEIGHT_VARIANCE = sinf( -time_accum / (3.14159f * 2.0f) ) * 100.0f;
-		printf( "%f\n", WAVE_HEIGHT_VARIANCE );
+		// printf( "%f\n", WAVE_HEIGHT_VARIANCE );
 
 		float radius = (float)(WAVE_HALF_X + WAVE_HALF_Z) / 16.0f;
 		int x = RandomInt( -WAVE_HALF_X, WAVE_HALF_X );
@@ -1465,6 +1519,7 @@ int main( )
 		++frame_count;
 	}
 
+	tsShutdownContext( ts_ctx );
 	lua_close( L );
 	FreeMeshes( );
 	tgFreeCtx( ctx );
@@ -1472,3 +1527,6 @@ int main( )
 	glfwTerminate( );
 	return 0;
 }
+
+#undef STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"
