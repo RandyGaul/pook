@@ -1016,8 +1016,8 @@ void DoPlayerCollision( )
 	}
 }
 
-#define WAVE_W 30
-#define WAVE_H 30
+#define WAVE_W 50
+#define WAVE_H 50
 #define WAVE_VERT_COUNT (WAVE_W * WAVE_H * 2 * 3 * 2)
 #define WAVE_COLOR V3( 0.6f, 0.75f, 0.95f )
 #define WAVE_AMPLITUDE 30.0f
@@ -1437,7 +1437,7 @@ int main( )
 
 	unsigned frame_count = 0;
 
-	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
+	glClearColor( 0.0f, .74f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glfwPollEvents( );

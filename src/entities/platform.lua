@@ -16,7 +16,7 @@ local function GenerateMesh(self)
 		{1, -1, -1}		--H
 
 	PushMeshLua({C,B,A,C,A,D,H,C,D,H,D,G,H,G,F,G,E,F,B,F,
-		E,B,E,A,D,A,E,D,E,G,F,B,C,H,F,C}, "cube")
+		E,B,E,A,D,A,E,D,E,G,F,B,C,H,F,C}, "cube", {0, 1, 0})
 	GeneratedMeshes["platform"] = true
 end
 
