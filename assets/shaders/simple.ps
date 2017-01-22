@@ -8,12 +8,19 @@ in vec4 v_normal;
 
 out vec4 out_color;
 
+float Smooth( float x )
+{
+	return x * x * (3.0 - 2.0 * x);
+}
+
 void main( )
 {
 	out_color = u_eye;
 	out_color = v_pos;
 	out_color = v_col;
 	float d = v_normal.z;
+	float factor = 0.65;
+	d = d * factor + (1 - factor);
 	out_color = v_col * d;
 	out_color = vec4( out_color.xyz, 1 );
 }
