@@ -12,7 +12,7 @@ GLfloat quadVertices[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
      1.0f, -1.0f,  1.0f, 0.0f,
      1.0f,  1.0f,  1.0f, 1.0f
-};	
+};
 enum
 {
 	TG_FLOAT,
@@ -197,7 +197,7 @@ void* tgMakeCtx( uint32_t max_draw_calls )
 	return ctx;
 }
 
-void tgGenerateFramebuffer(tgFramebuffer* tgFbo)
+void tgGenerateFramebuffer(tgFramebuffer* tgFbo, int w, int h)
 {
 	// Generate the frame buffer
 	GLuint fbo;
@@ -208,7 +208,7 @@ void tgGenerateFramebuffer(tgFramebuffer* tgFbo)
 	GLuint colorBuffer;
 	glGenTextures(1, &colorBuffer);
 	glBindTexture(GL_TEXTURE_2D, colorBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1200, 1200, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -220,7 +220,7 @@ void tgGenerateFramebuffer(tgFramebuffer* tgFbo)
 	GLuint rbo;
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1200, 1200);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);

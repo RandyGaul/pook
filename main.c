@@ -115,9 +115,11 @@ void MouseCB(GLFWwindow* window, double x, double y)
 
 void Reshape( GLFWwindow* window, int width, int height )
 {
+	printf( "RESHAPE: %d %d\n", width, height );
 	GLfloat aspect = (GLfloat) height / (GLfloat) width;
 	float fov = 1.48353f;
 	tgPerspective( projection, fov, aspect, 0.1f, 10000.0f );
+	glViewport( 0, 0, width, height );
 }
 
 void PookSwapBuffers( )
@@ -1345,7 +1347,6 @@ int main( )
 	int height = 1200;
 
 	window = glfwCreateWindow( width, height, "pook", NULL, NULL );
-	Reshape( window, width, height );
 
 	if ( !window )
 	{
@@ -1361,6 +1362,7 @@ int main( )
 	glfwMakeContextCurrent( window );
 	gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress );
 	glfwSwapInterval( 1 );
+	Reshape( window, width, height );
 
 	void* ctx = tgMakeCtx( 32 );
 
@@ -1383,7 +1385,6 @@ int main( )
 
 	m4Mul( projection, cam, mvp );
 	UpdateMvp();
-	glViewport(0, 0, width, height);
 
 	// init lua
 	// L = luaL_newstate( );
@@ -1407,8 +1408,7 @@ int main( )
 	unsigned frame_count = 0;
 
 	tgFramebuffer fbo;
-
-	tgGenerateFramebuffer(&fbo);
+	tgGenerateFramebuffer(&fbo, width, height);
 	tgShader postProcessShader;
 	char* vs = (char*)ReadFileToMemory( "./assets/shaders/postprocess.vs", 0 );
 	char* ps = (char*)ReadFileToMemory( "./assets/shaders/postprocess.ps", 0 );
