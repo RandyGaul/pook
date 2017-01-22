@@ -50,4 +50,8 @@ function GenerateLevel(numPlatforms)
 	for i = 1, numPlatforms - 1 do
 		ConfigurePlatform(platformPool:get())
 	end
+
+	local midPlat = platforms[math.floor(#platforms/2)];
+	midPlat.p.y = midPlat.p.y + 40
+	player.p = v3(midPlat.p.x, midPlat.p.y + 12, midPlat.p.z)
 end

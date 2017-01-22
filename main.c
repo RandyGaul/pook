@@ -89,6 +89,7 @@ void ErrorCB( int error, const char* description )
 void pcall_setup( const char* func_name );
 void pcall_do( int arg_count, int ret_value_count );
 void HandleMouseMovement( lua_State* L, float x, float y );
+void ResetGameState();
 void UpdateMvp();
 void m4Mul( float* a, float* b, float* c );
 int FindRender( const char* name );
@@ -1280,7 +1281,8 @@ void HitWaveCB( )
 {
 	if ( WAVE_DEBOUNCE ) return;
 	WAVE_DEBOUNCE = 1;
-	printf( "HIT THE WAVE\n" );
+	printf( "HIT THE WAVE. RESTARTING.\n" );
+	ResetGameState();
 }
 
 int DetectWaveCollision( )
@@ -1305,11 +1307,29 @@ int DetectWaveCollision( )
 	return found;
 }
 
-int main( )
+void ResetGameState()
 {
 	t = 0;
+	L = luaL_newstate( );
+	luaL_openlibs( L );
+	Register( L, PushMesh );
+	Register( L, PushVert_internal );
+	Register( L, PushInstance_internal );
+	Register( L, UpdateCam );
+	Register( L, Flush );
+	Register( L, FlushVerts );
+	Register( L, AddCubeCollider );
+	Register( L, ClearCubes );
+	Register( L, SetPlayerPosition );
+	Register( L, SetPlayerVelocity );
+	Register( L, AdjustGameTime );
+	Dofile( L, "src/core/init.lua" );
+}
+
+int main( )
+{
 	SetCDW( );
-	//PRINT_CWD( );
+	ResetGameState();
 
 	glfwSetErrorCallback( ErrorCB );
 
@@ -1366,20 +1386,20 @@ int main( )
 	glViewport(0, 0, width, height);
 
 	// init lua
-	L = luaL_newstate( );
-	luaL_openlibs( L );
-	Register( L, PushMesh );
-	Register( L, PushVert_internal );
-	Register( L, PushInstance_internal );
-	Register( L, UpdateCam );
-	Register( L, Flush );
-	Register( L, FlushVerts );
-	Register( L, AddCubeCollider );
-	Register( L, ClearCubes );
-	Register( L, SetPlayerPosition );
-	Register( L, SetPlayerVelocity );
-	Register( L, AdjustGameTime );
-	Dofile( L, "src/core/init.lua" );
+	// L = luaL_newstate( );
+	// luaL_openlibs( L );
+	// Register( L, PushMesh );
+	// Register( L, PushVert_internal );
+	// Register( L, PushInstance_internal );
+	// Register( L, UpdateCam );
+	// Register( L, Flush );
+	// Register( L, FlushVerts );
+	// Register( L, AddCubeCollider );
+	// Register( L, ClearCubes );
+	// Register( L, SetPlayerPosition );
+	// Register( L, SetPlayerVelocity );
+	// Register( L, AdjustGameTime );
+	// Dofile( L, "src/core/init.lua" );
 	InitMeshes( );
 	MakeMeshes( L );
 

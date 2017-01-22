@@ -115,6 +115,7 @@ function GeneratePlayer()
 
 	-- player.verts = ObjLoader.getVerts("assets/models/cow.obj")
 	player.verts = GenerateSphereMesh(3)
+
 	player.p = v3(0, 0, 0)
 	player.v = v3(0, 0, 0)
 

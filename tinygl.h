@@ -22,6 +22,8 @@ enum
 	TG_UNKNOWN,
 };
 
+#define FBO_ON 1
+
 typedef struct
 {
 	const char* name;
@@ -711,11 +713,15 @@ static void tgRender( tgDrawCall* call )
 {
 	// add a check to make sure the thing is valid
 	tgFramebuffer* fbo = call->fbo;
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo_id);
 
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	glEnable(GL_DEPTH_TEST);
+	if (FBO_ON)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo_id);
+	
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glEnable(GL_DEPTH_TEST);
+	}
 	tgRenderable* render = call->r;
 	uint32_t texture_count = call->texture_count;
 	uint32_t* textures = call->textures;
@@ -795,22 +801,25 @@ static void tgRender( tgDrawCall* call )
 	glUseProgram( 0 );
 		TG_PRINT_GL_ERRORS( );
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear( GL_COLOR_BUFFER_BIT );
-	glDisable(GL_DEPTH_TEST);
-
-	tgSetActiveShader(&fbo->shader);
-
-	glBindBuffer(GL_ARRAY_BUFFER, fbo->quad_buffer_id);
-	glBindTexture(GL_TEXTURE_2D, fbo->color_buffer_id);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	if (FBO_ON)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear( GL_COLOR_BUFFER_BIT );
+		glDisable(GL_DEPTH_TEST);
+	
+		tgSetActiveShader(&fbo->shader);
+	
+		glBindBuffer(GL_ARRAY_BUFFER, fbo->quad_buffer_id);
+		glBindTexture(GL_TEXTURE_2D, fbo->color_buffer_id);
+	
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
 }
 
 void tgPresent( void* ctx )
