@@ -24,8 +24,15 @@ local function Render(self)
 	PushInstance("simple", "cube", self.p.x, self.p.y, self.p.z, self.s.x, self.s.y, self.s.z)
 end
 
-local function Update()
---
+local function Update(self)
+	self.yDisplacement = math.sin(self.platformFrequencyMult * t + self.platformWaveOffset)
+		* self.yMoveDistance
+	self.p.y = self.originalY + self.yDisplacement
+	if not self.coin == nil then
+		self.coin.y = self.p.y + self.s.y
+	end
+
+	AddCubeCollider(self.s.x, self.s.y, self.s.z, self.p.x, self.p.y, self.p.z)
 end
 
 function GeneratePlatform()
@@ -51,12 +58,19 @@ function GeneratePlatform()
 		self.s.x = sx
 		self.s.y = sy
 		self.s.z = sz
-		
+
+		self.yMoveDistance = math.random(2, 4)
+		self.yDisplacement = 0
+		self.originalY = y
+		self.platformFrequencyMult = math.random(1, 3)
+		self.platformWaveOffset = math.random(0, 3)
+
 		if math.random(1, 3) > 1 then
 			local coin = cowPool:get()
 			coin.p.x = x
 			coin.p.z = z
 			coin.p.y = y + self.s.y
+			self.coin = coin
 		end
 
 		local p = self.p

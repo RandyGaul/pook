@@ -905,6 +905,11 @@ int SetPlayerVelocity( lua_State* L )
 	return 0;
 }
 
+int ClearCubes( lua_State* L )
+{
+	cube_count = 0;
+}
+
 int AddCubeCollider( lua_State* L )
 {
 	LUA_ERROR_IF( L, lua_gettop( L ) != 6, "AddCubeCollider expects 6 floats" );
@@ -920,7 +925,7 @@ int AddCubeCollider( lua_State* L )
 	cube.p = V3( px, py, pz );
 	TG_ASSERT( cube_count < MAX_CUBES );
 	cubes[ cube_count++ ] = cube;
-	printf( "got cube %f, %f, %f, %f, %f, %f\n", ex, ey, ez, px, py, pz );
+	// printf( "got cube %f, %f, %f, %f, %f, %f\n", ex, ey, ez, px, py, pz );
 	return 0;
 }
 
@@ -1100,8 +1105,11 @@ int main( )
 	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
-	window = glfwCreateWindow( 1200, 800, "pook", NULL, NULL );
-	Reshape( window, 1200, 800 );
+	int width = 1400;
+	int height = 925;
+
+	window = glfwCreateWindow( width, height, "pook", NULL, NULL );
+	Reshape( window, width, height );
 
 	if ( !window )
 	{
@@ -1148,6 +1156,7 @@ int main( )
 	Register( L, Flush );
 	Register( L, FlushVerts );
 	Register( L, AddCubeCollider );
+	Register( L, ClearCubes );
 	Register( L, SetPlayerPosition );
 	Register( L, SetPlayerVelocity );
 	Dofile( L, "src/core/init.lua" );
