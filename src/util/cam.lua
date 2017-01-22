@@ -26,17 +26,17 @@ local function deg2Rad(deg)
 end
 
 function handleMouseMovement(x, y)
-	if not player or  (prevX == x and prevY == y) then return end
+	if not player or (prevX == x and prevY == y) then return end
 
 	if prevX == nil then
 		dx, dy = 0, 0
 	else
-		dx, dy = x - prevX, prevY - y
+		dx, dy = x - 600, prevY - 600
 	end
 
 	accumulatedYaw = accumulatedYaw + dx * sensitivity
 	accumulatedPitch = accumulatedPitch + dy * sensitivity
-	yawRad, pitchRad = deg2Rad(clampDeg(accumulatedYaw)), deg2Rad(clampDeg(accumulatedPitch))
+	yawRad, pitchRad = deg2Rad(accumulatedYaw), deg2Rad(accumulatedPitch)
 
 	vx = math.cos(yawRad) * math.cos(pitchRad)
 	vy = math.sin(pitchRad)

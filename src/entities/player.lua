@@ -52,6 +52,7 @@ local function InitJump(self)
 end
 
 local function Update(self)
+	front = front or v3(0, 0, 1); right = right or v3(0, -1, 0)
 	local scaledFront = front * playerSpeed
 	local scaledRight = right * playerSpeed
 

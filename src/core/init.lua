@@ -21,7 +21,7 @@ cowPool = ObjectPooler(15, 50, 2, GenerateCow)
 platformPool = ObjectPooler(33, 50, 2, GeneratePlatform)
 player = GeneratePlayer()
 
---skybox = GenerateSkybox()
+skybox = GenerateSkybox()
 GenerateLevel(30)
 
 -- add init stuff below

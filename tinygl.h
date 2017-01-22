@@ -94,11 +94,20 @@ struct tgShader
 
 typedef struct
 {
+	uint32_t fbo_id;
+	uint32_t color_buffer_id;
+	uint32_t quad_buffer_id;
+	tgShader shader;
+} tgFramebuffer;
+
+typedef struct
+{
 	uint32_t vert_count;
 	void* verts;
 	tgRenderable* r;
 	uint32_t texture_count;
 	uint32_t textures[ 8 ];
+	tgFramebuffer* fbo;
 } tgDrawCall;
 
 void* tgMakeCtx( uint32_t max_draw_calls );
@@ -175,6 +184,50 @@ void* tgMakeCtx( uint32_t max_draw_calls )
 		return 0;
 	}
 	return ctx;
+}
+
+void tgGenerateFramebuffer(tgFramebuffer* tgFbo, GLfloat* quadVertices)
+{
+	// Generate the frame buffer
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	// Generate a texture to use as the color buffer.
+	GLuint colorBuffer;
+	glGenTextures(1, &colorBuffer);
+	glBindTexture(GL_TEXTURE_2D, colorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1200, 1200, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// Attach color buffer to frame buffer
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
+
+	// Generate depth and stencil attachments for the fbo using a RenderBuffer.
+	GLuint rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1200, 1200);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		printf("failed to generate framebuffer");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	GLuint quadBuffer;
+	glGenBuffers(1, &quadBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, quadBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	tgFbo->fbo_id = fbo;
+	tgFbo->color_buffer_id = colorBuffer;
+	tgFbo->quad_buffer_id = quadBuffer;
 }
 
 void tgFreeCtx( void* ctx )
@@ -645,6 +698,9 @@ void tgDoMap( tgDrawCall* call, tgRenderable* render )
 
 static void tgRender( tgDrawCall* call )
 {
+	// add a check to make sure the thing is valid
+	// tgFramebuffer* fbo = call->fbo;
+	// glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo_id);
 	tgRenderable* render = call->r;
 	uint32_t texture_count = call->texture_count;
 	uint32_t* textures = call->textures;
@@ -698,7 +754,7 @@ static void tgRender( tgDrawCall* call )
 		glBindTexture( GL_TEXTURE_2D, gl_id );
 	}
 
-			TG_PRINT_GL_ERRORS( );
+	TG_PRINT_GL_ERRORS( );
 	uint32_t streamOffset = render->index0;
 	uint32_t streamSize = render->index1 - streamOffset;
 	glDrawArrays( data->primitive, streamOffset, streamSize );
@@ -723,6 +779,14 @@ static void tgRender( tgDrawCall* call )
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glUseProgram( 0 );
 		TG_PRINT_GL_ERRORS( );
+
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// glClear(GL_COLOR_BUFFER_BIT);
+	// glDisable(GL_DEPTH_TEST);
+
+	// tgSetActiveShader( render->program );
+	// glBind
+
 }
 
 void tgPresent( void* ctx )

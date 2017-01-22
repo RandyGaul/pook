@@ -20,7 +20,7 @@ end
 function GenerateSkybox()
 	local skybox = {}
 	skybox.GenerateMesh = GenerateMesh
-	skybox.s = v3(50, 50, 50)
+	skybox.s = v3(300, 300, 300)
 	skybox.Render = Render
 	skybox.Update = function() end
 

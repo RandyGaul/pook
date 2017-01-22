@@ -24,6 +24,10 @@
 
 GLFWwindow* window;
 
+GLfloat quadVertices[] = {
+	-1.0f, 1.0f, 0.0f, 1.0f
+};
+
 // Same MVP being used for every single object for now.
 float dt;
 float projection[ 16 ];
@@ -32,7 +36,7 @@ float cam[ 16 ];
 tgShader simple;
 struct Vertex;
 int mouse_moved;
-int initialWaveY = -25;
+int initialWaveY = 0;
 float player_radius = 7.0f;
 
 lua_State* L;
@@ -1016,8 +1020,8 @@ void DoPlayerCollision( )
 	}
 }
 
-#define WAVE_W 50
-#define WAVE_H 50
+#define WAVE_W 30
+#define WAVE_H 30
 #define WAVE_VERT_COUNT (WAVE_W * WAVE_H * 2 * 3 * 2)
 #define WAVE_COLOR V3( 0.6f, 0.75f, 0.95f )
 #define WAVE_AMPLITUDE 30.0f
@@ -1389,6 +1393,7 @@ int main( )
 	glfwSetKeyCallback( window, KeyCB );
 	glfwSetCursorPosCallback( window, MouseCB );
 	glfwSetFramebufferSizeCallback( window, Reshape );
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwMakeContextCurrent( window );
 	gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress );
@@ -1437,7 +1442,16 @@ int main( )
 
 	unsigned frame_count = 0;
 
-	glClearColor( 0.0f, .74f, 1.0f, 1.0f );
+	tgFramebuffer fbo;
+
+	tgGenerateFramebuffer(&fbo, quadVertices);
+	tgShader postProcessShader;
+	char* vs = (char*)ReadFileToMemory( "./assets/shaders/postprocess.vs", 0 );
+	char* ps = (char*)ReadFileToMemory( "./assets/shaders/postprocess.ps", 0 );
+	tgLoadShader(&postProcessShader, vs, ps);
+	fbo.shader = postProcessShader;
+
+	glClearColor( 0.0f, 0.35f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glfwPollEvents( );
@@ -1465,14 +1479,15 @@ int main( )
 				call.verts = dc->verts;
 				call.vert_count = dc->count;
 				call.verts = dc->verts;
+				call.fbo = &fbo;
 				tgPushDrawCall( ctx, call );
 				dc->count = 0;
 			}
 		}
-
+		glfwSetCursorPos( window, 600, 600 );
 		if ( mouse_moved )
 		{
-			//glfwSetCursorPos( window, 600, 600 );
+			// glfwSetCursorPos( window, 600, 600 );
 			mouse_moved = 0;
 		}
 		tgFlush( ctx, PookSwapBuffers );

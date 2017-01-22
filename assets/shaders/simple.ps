@@ -22,8 +22,10 @@ void main( )
 	float factor = 0.65;
 	d = d * factor + (1 - factor);
 	out_color = v_col * d;
-	out_color = vec4( out_color.xyz, 1 );
-	float t = v_pos.z / 60.0f;
-	t = t * t * t;
-	//out_color = mix( out_color, vec4( 1 ), t );
+	
+// 	out_color = vec4( out_color.xyz, 1 );
+// 	float t = v_pos.z / 60.0f;
+// 	t = t * t * t * t * t * t;
+// 	t = clamp(t, 0, 1);
+// 	out_color = mix( out_color, vec4(0, .35, 1, 1), t );
 }
