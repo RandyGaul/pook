@@ -157,6 +157,14 @@ v3 cross( v3 a, v3 b )
 	return V3( a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x* b.y - a.y * b.x );
 }
 
+v3 sMul( v3 a, float b )
+{
+	a.x *= b;
+	a.y *= b;
+	a.z *= b;
+	return a;
+}
+
 float len( v3 a )
 {
 	return sqrtf( dot( a, a ) );
@@ -925,7 +933,6 @@ int AddCubeCollider( lua_State* L )
 	cube.p = V3( px, py, pz );
 	TG_ASSERT( cube_count < MAX_CUBES );
 	cubes[ cube_count++ ] = cube;
-	// printf( "got cube %f, %f, %f, %f, %f, %f\n", ex, ey, ez, px, py, pz );
 	return 0;
 }
 
@@ -1006,16 +1013,18 @@ void DoPlayerCollision( )
 	}
 }
 
-#define WAVE_W 60
-#define WAVE_H 60
+#define WAVE_W 100
+#define WAVE_H 100
 #define WAVE_VERT_COUNT (WAVE_W * WAVE_H * 2 * 3 * 2)
+#define WAVE_COLOR V3( 0.6f, 0.75f, 0.95f )
+#define WAVE_AMPLITUDE 30.0f
 
 Vertex wave_verts[ WAVE_VERT_COUNT ];
 
 void AddWaveTri( int i, v3 a, v3 b, v3 c )
 {
 	Vertex va, vb, vc;
-	v3 color = V3( 0.2f, 0.5f, 0.7f );
+	v3 color = WAVE_COLOR;
 	va.position = a;
 	va.color = color;
 	vb.position = b;
@@ -1064,6 +1073,22 @@ void InitWaveVerts( )
 	}
 }
 
+v3 lerp( v3 a, v3 b, float t )
+{
+	v3 c = sub( b, a );
+	return add( a, sMul( c, t ) );
+}
+
+v3 CalcWaveColor( float y )
+{
+	y += 30.0f;
+	y /= WAVE_AMPLITUDE * 2.0f;
+	v3 red = V3( 0.8f, 0.2f, 0.4f );
+	v3 blue = WAVE_COLOR;
+	v3 c = lerp( red, blue, y );
+	return c;
+}
+
 void DrawWave( )
 {
 	DrawCall* call = meshes.calls + FindRender( "simple" );
@@ -1076,7 +1101,7 @@ void DrawWave( )
 		Vertex b = wave_verts[ i + 1 ];
 		Vertex c = wave_verts[ i + 2 ];
 #define DO_WAVE_ANIM( vert ) \
-		vert.position.y = cosf( t + vert.position.z / 7.5f ) * 5.0f
+		vert.position.y = cosf( t / 2.0f + vert.position.z / 15.0f ) * WAVE_AMPLITUDE
 		DO_WAVE_ANIM( a );
 		DO_WAVE_ANIM( b );
 		DO_WAVE_ANIM( c );
@@ -1084,6 +1109,9 @@ void DrawWave( )
 		a.normal = n;
 		b.normal = n;
 		c.normal = n;
+		a.color = CalcWaveColor( a.position.y );
+		b.color = CalcWaveColor( b.position.y );
+		c.color = CalcWaveColor( c.position.y );
 		PushTransformedVert( a, call );
 		PushTransformedVert( b, call );
 		PushTransformedVert( c, call );
