@@ -917,6 +917,7 @@ int SetPlayerVelocity( lua_State* L )
 int ClearCubes( lua_State* L )
 {
 	cube_count = 0;
+	return 0;
 }
 
 int AddCubeCollider( lua_State* L )
@@ -1042,7 +1043,7 @@ void AddWaveQuad( int i, int x, int z )
 	int dim = 1;
 	x -= WAVE_W / 2;
 	z -= WAVE_H / 2;
-	int scale = 35;
+	int scale = 10;
 	x *= scale;
 	z *= scale;
 	dim *= scale;
@@ -1081,6 +1082,7 @@ v3 lerp( v3 a, v3 b, float t )
 
 v3 CalcWaveColor( float y )
 {
+	y -= initialWaveY;
 	y += WAVE_AMPLITUDE;
 	y /= WAVE_AMPLITUDE * 2.0f;
 	v3 red = V3( 0.8f, 0.2f, 0.4f );
@@ -1133,8 +1135,8 @@ int main( )
 	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
-	int width = 1400;
-	int height = 925;
+	int width = 1200;
+	int height = 1200;
 
 	window = glfwCreateWindow( width, height, "pook", NULL, NULL );
 	Reshape( window, width, height );
