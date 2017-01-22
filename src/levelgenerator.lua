@@ -20,7 +20,7 @@ local function ConfigurePlatform( platform)
 	while not success do
 		dir = DIRECTIONS[math.random(1, 4)]
 		local prev = platforms[math.random(1, #platforms)]
-		local newScale = v3(math.random(2, 6), math.random(4, 7), math.random(2, 6))
+		local newScale = v3(math.random(3, 6), math.random(4, 7), math.random(3, 6))
 		local newPos = v3(prev.p.x + (prev.s.x + newScale.x + RandomPlatformOffset()) * dir.x,
 				prev.p.y + (prev.s.y + newScale.y + RandomPlatformOffset()) * SIGNS[math.random(1, 2)],
 				prev.p.z + (prev.s.z + newScale.z + RandomPlatformOffset()) * dir.z
@@ -44,13 +44,10 @@ local function ConfigurePlatform( platform)
 end
 
 function GenerateLevel(numPlatforms)
-	--
 	local initialPlatform = platformPool:get()
-	initialPlatform:Init(0, -2, 0, 3, 3, 3)
+	initialPlatform:Init(0, -2, 0, 5, 5, 5)
 
 	for i = 1, numPlatforms - 1 do
 		ConfigurePlatform(platformPool:get())
-		-- prevPlatform:Init(math.random(0, 10), math.random(-3, 3), math.random(-10, 0),
-		-- 	math.random(2, 4), math.random(3, 6), math.random(2, 4))
 	end
 end

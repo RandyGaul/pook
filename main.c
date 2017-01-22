@@ -1000,9 +1000,10 @@ void DoPlayerCollision( )
 			player_position = a;
 			SetPlayerPositionFromC( L, a.x, a.y, a.z );
 			n = norm( sub( b, a ) );
-			float up_dot = dot( n, V3( 0, 1, 0 ) );
-			if ( up_dot < 0 ) up_dot = -up_dot;
-			if ( up_dot >= 0.3f ) SetPlayerTouchingGround( 1 );
+			// float up_dot = dot( n, V3( 0, 1, 0 ) );
+			// if ( up_dot < 0 ) up_dot = -up_dot;
+			// if ( up_dot >= 0.15f ) SetPlayerTouchingGround( 1 );
+			SetPlayerTouchingGround( 1 );
 			float contribution = dot( n, player_velocity );
 			n.x *= contribution;
 			n.y *= contribution;

@@ -5,7 +5,7 @@ s = math.sin
 c = math.cos
 world = {}
 math.randomseed(os.time())
-GRAVITY = 100
+GRAVITY = 250
 
 THE_COINS = {}
 THE_COIN_ID = 0

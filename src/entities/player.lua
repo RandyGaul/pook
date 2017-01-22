@@ -1,4 +1,5 @@
 playerSpeed = 40
+playerRadius = 7
 WORLD_BOTTOM = -1000
 JUMP_HEIGHT = 20
 
@@ -30,7 +31,7 @@ local function TouchingGround(self)
 	end
 
 	for i, v in pairs(platforms) do
-		local groundCheckOffset = 7.5
+		local groundCheckOffset = playerRadius + 5
 		if self.p.x > (v.p.x - v.s.x) and self.p.x < (v.p.x + v.s.x) and self.p.z > (v.p.z - v.s.z) and self.p.z < (v.p.z + v.s.z)
 			and (self.p.y - groundCheckOffset) > (v.p.y - v.s.y) and (self.p.y - groundCheckOffset) < (v.p.y + v.s.y) then
 			self.touching_ground = true
@@ -73,7 +74,7 @@ local function Update(self)
 		self.v.z = -scaledRight.z
 		self.v.x = -scaledRight.x
 	end
-	if KeyPressed(KEY_SPACE) and self:TouchingGround() then
+	if KeyPressed(KEY_SPACE) and math.abs(self.v.y) < .01 then
 		self.v.y = JumpHeight( JUMP_HEIGHT )
 		self.touching_ground = false
 	end
@@ -100,8 +101,7 @@ local function Update(self)
 	-- collide with coins and remove them
 	for k, v in pairs( THE_COINS ) do
 		local dist = length(v.p - player.p)
-		if dist < (7 + 2) then
-			print( "HIT THE COIN" )
+		if dist < (playerRadius + 2) then
 			v.alive = false
 			THE_COINS[ k ] = nil
 			-- play a sound effect too?
