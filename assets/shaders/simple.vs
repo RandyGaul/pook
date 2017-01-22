@@ -13,7 +13,7 @@ out vec4 v_normal;
 void main( )
 {
 	v_col = a_col;
-	v_normal = a_normal;
+	v_normal = u_mvp * vec4( a_normal.x, a_normal.y, a_normal.z, 0 );
 	v_pos = u_mvp * a_pos;
 	gl_Position = v_pos;
 }

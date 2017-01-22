@@ -25,11 +25,13 @@
 GLFWwindow* window;
 
 // Same MVP being used for every single object for now.
+float dt;
 float projection[ 16 ];
 float mvp[ 16 ];
 float cam[ 16 ];
 tgShader simple;
 struct Vertex;
+int mouse_moved;
 
 lua_State* L;
 
@@ -102,6 +104,7 @@ void KeyCB( GLFWwindow* window, int key, int scancode, int action, int mods )
 void MouseCB(GLFWwindow* window, double x, double y)
 {
 	HandleMouseMovement( L, (float)x, (float)y );
+	mouse_moved = 1;
 }
 
 void Reshape( GLFWwindow* window, int width, int height )
@@ -311,7 +314,12 @@ int UpdateCam( lua_State *L )
 	lua_settop(L, 0);
 
 	v3 eye = V3(eyeX, eyeY, eyeZ);
-	LookAt(cam, eye, add( eye, V3( frontX, frontY, frontZ ) ), V3(0, 1, 0));
+	v3 center = add( eye, V3( frontX, frontY, frontZ ) );
+	LookAt(cam, eye, center, V3(0, 1, 0));
+	v3 dir = norm( sub( center, eye ) );
+	tgSetActiveShader( &simple );
+	tgSendF32( &simple, "u_eye", 1, (float*)&dir, 4 );
+	tgDeactivateShader( );
 	UpdateMvp();
 	return 0;
 }
@@ -737,17 +745,38 @@ int PushInstance_internal( lua_State *L )
 	float angle = ra;
 	m3 r = m3Rotation( axis, angle );
 
-	for ( int i = 0; i < mesh->vert_count; ++i )
+	for ( int i = 0; i < mesh->vert_count; i += 3 )
 	{
-		Vertex v = mesh->verts[ i ];
+		Vertex a = mesh->verts[ i ];
+		Vertex b = mesh->verts[ i + 1 ];
+		Vertex c = mesh->verts[ i + 2 ];
 
-		v.position = v3Mul( r, v.position );
+		a.position = v3Mul( r, a.position );
+		b.position = v3Mul( r, b.position );
+		c.position = v3Mul( r, c.position );
 
-		v.position.x *= sx;
-		v.position.y *= sy;
-		v.position.z *= sz;
-		v.position = add( v.position, p );
-		PushTransformedVert( v, call );
+		a.position.x *= sx;
+		a.position.y *= sy;
+		a.position.z *= sz;
+		b.position.x *= sx;
+		b.position.y *= sy;
+		b.position.z *= sz;
+		c.position.x *= sx;
+		c.position.y *= sy;
+		c.position.z *= sz;
+
+		a.position = add( a.position, p );
+		b.position = add( b.position, p );
+		c.position = add( c.position, p );
+
+		v3 n = norm( cross( sub( b.position, a.position ), sub( b.position, c.position ) ) );
+		a.normal = n;
+		b.normal = n;
+		c.normal = n;
+
+		PushTransformedVert( a, call );
+		PushTransformedVert( b, call );
+		PushTransformedVert( c, call );
 	}
 
 	return 0;
@@ -972,6 +1001,89 @@ void DoPlayerCollision( )
 	}
 }
 
+#define WAVE_W 60
+#define WAVE_H 60
+#define WAVE_VERT_COUNT (WAVE_W * WAVE_H * 2 * 3 * 2)
+
+Vertex wave_verts[ WAVE_VERT_COUNT ];
+
+void AddWaveTri( int i, v3 a, v3 b, v3 c )
+{
+	Vertex va, vb, vc;
+	v3 color = V3( 0.2f, 0.5f, 0.7f );
+	va.position = a;
+	va.color = color;
+	vb.position = b;
+	vb.color = color;
+	vc.position = c;
+	vc.color = color;
+	wave_verts[ i ] = va;
+	wave_verts[ i + 1 ] = vb;
+	wave_verts[ i + 2 ] = vc;
+}
+
+void AddWaveQuad( int i, int x, int z )
+{
+	int dim = 1;
+	x -= WAVE_W / 2;
+	z -= WAVE_H / 2;
+	int scale = 5;
+	x *= scale;
+	z *= scale;
+	dim *= scale;
+	v3 a = V3( x, 0, z );
+	v3 b = V3( x + dim, 0, z );
+	v3 c = V3( x + dim, 0, z + dim );
+	AddWaveTri( i, a, c, b );
+	AddWaveTri( i + 3, a, b, c );
+
+	a = V3( x, 0, z );
+	b = V3( x, 0, z + dim );
+	c = V3( x + dim, 0, z + dim );
+	AddWaveTri( i + 6, a, b, c );
+	AddWaveTri( i + 9, a, c, b );
+}
+
+void InitWaveVerts( )
+{
+	int i = 0;
+	for ( int row = 0; row < WAVE_H; ++row )
+	{
+		for ( int col = 0; col < WAVE_W; ++col )
+		{
+			TG_ASSERT( i + 12 <= WAVE_VERT_COUNT );
+			AddWaveQuad( i, row, col );
+			i += 12;
+		}
+	}
+}
+
+void DrawWave( )
+{
+	DrawCall* call = meshes.calls + FindRender( "simple" );
+	static float t = 0;
+	t += dt;
+
+	for ( int i = 0; i < WAVE_VERT_COUNT; i += 3 )
+	{
+		Vertex a = wave_verts[ i ];
+		Vertex b = wave_verts[ i + 1 ];
+		Vertex c = wave_verts[ i + 2 ];
+#define DO_WAVE_ANIM( vert ) \
+		vert.position.y = cosf( t + vert.position.z / 7.5f ) * 5.0f
+		DO_WAVE_ANIM( a );
+		DO_WAVE_ANIM( b );
+		DO_WAVE_ANIM( c );
+		v3 n = norm( cross( sub( b.position, a.position ), sub( b.position, c.position ) ) );
+		a.normal = n;
+		b.normal = n;
+		c.normal = n;
+		PushTransformedVert( a, call );
+		PushTransformedVert( b, call );
+		PushTransformedVert( c, call );
+	}
+}
+
 int main( )
 {
 	SetCDW( );
@@ -1006,10 +1118,12 @@ int main( )
 
 	void* ctx = tgMakeCtx( 32 );
 
+#if 1
 	glEnable( GL_CULL_FACE );
 	glEnable( GL_DEPTH_TEST );
 	glCullFace( GL_BACK );
 	glFrontFace( GL_CCW );
+#endif
 
 	GLuint vao;
 	glGenVertexArrays( 1, &vao );
@@ -1039,15 +1153,18 @@ int main( )
 	InitMeshes( );
 	MakeMeshes( L );
 
+	InitWaveVerts( );
+
 	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glfwPollEvents( );
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-		float dt = ttTime( );
+		dt = ttTime( );
 		DoPlayerCollision( );
 		Tick( L, dt );
+		DrawWave( );
 
 		for ( int i = 0; i < meshes.render_count; ++i )
 		{
@@ -1065,6 +1182,11 @@ int main( )
 			}
 		}
 
+		if ( mouse_moved )
+		{
+			//glfwSetCursorPos( window, 600, 400 );
+			mouse_moved = 0;
+		}
 		tgFlush( ctx, PookSwapBuffers );
 		TG_PRINT_GL_ERRORS( );
 	}

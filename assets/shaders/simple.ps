@@ -10,8 +10,10 @@ out vec4 out_color;
 
 void main( )
 {
-	out_color = v_col * dot( u_eye, v_normal );
 	out_color = u_eye;
 	out_color = v_pos;
 	out_color = v_col;
+	float d = v_normal.z;
+	out_color = v_col * d;
+	out_color = vec4( out_color.xyz, 1 );
 }

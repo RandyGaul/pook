@@ -550,7 +550,9 @@ void tgSendF32( tgShader* s, char* uniform_name, uint32_t size, float* floats, u
 
 	case 4:
 	{
+		TG_PRINT_GL_ERRORS( );
 		glUniform4f( u->location, floats[ 0 ], floats[ 1 ], floats[ 2 ], 1.0f );
+		TG_PRINT_GL_ERRORS( );
 	}	break;
 
 	default:
