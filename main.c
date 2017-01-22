@@ -181,6 +181,12 @@ v3 norm( v3 a )
 	return V3( inv_len * a.x, inv_len * a.y, inv_len * a.z );
 }
 
+v3 lerp( v3 a, v3 b, float t )
+{
+	v3 c = sub( b, a );
+	return add( a, sMul( c, t ) );
+}
+
 v3 v3Mul( m3 m, v3 a )
 {
 	float x = dot( m.x, a );
@@ -1040,11 +1046,7 @@ void DoPlayerCollision( )
 
 #define WAVE_W 30
 #define WAVE_H 30
-#define WAVE_VERT_COUNT (WAVE_W * WAVE_H * 2 * 3 * 2)
 #define WAVE_COLOR V3( 0.6f, 0.75f, 0.95f )
-#define WAVE_AMPLITUDE 30.0f
-
-Vertex wave_verts[ WAVE_VERT_COUNT ];
 
 #define WAVE_PROPOGATION 0.01f
 #define WAVE_STIFFNESS 0.001f
@@ -1063,14 +1065,21 @@ typedef struct
 	float v;
 } WaveParticle;
 
+typedef struct
+{
+	int a;
+	int b;
+	int c;
+} WaveFace;
+
 #define WAVE_PARTICLE_COUNT ((WAVE_W + 1) * (WAVE_H + 1))
+#define WAVE_FACE_COUNT (WAVE_W * WAVE_H * 2 * 2)
 int edge_count;
 WaveEdge wave_edges[ WAVE_W * WAVE_H * 4 ];
 WaveParticle wave_particles[ WAVE_PARTICLE_COUNT ];
-int wave_indices[ WAVE_VERT_COUNT ];
-int wave_indices_cache[ WAVE_PARTICLE_COUNT ];
+WaveFace wave_faces[ WAVE_FACE_COUNT ];
 
-void InitWaveParticles( )
+void InitWave( )
 {
     int hc = (WAVE_W + 1) * WAVE_H;
     int vc = WAVE_W * (WAVE_H + 1);
@@ -1089,6 +1098,44 @@ void InitWaveParticles( )
 		e->a = i;
 		e->b = i + WAVE_W;
 	}
+
+	int k = 0;
+	for ( int i = 0; i < WAVE_H; ++i )
+	{
+		for ( int j = 0; j < WAVE_W; ++j )
+		{
+			// 2 tris for a quad
+			TG_ASSERT( k < WAVE_FACE_COUNT );
+			WaveFace* f = wave_faces + k++;
+			f->a = i * (WAVE_W + 1) + j + 1;
+			f->b = i * (WAVE_W + 1) + j;
+			f->c = (i + 1) * (WAVE_W + 1) + j;
+			//printf( "%d %d %d\n", f->a, f->b, f->c );
+
+			TG_ASSERT( k < WAVE_FACE_COUNT );
+			f = wave_faces + k++;
+			f->a = i * (WAVE_W + 1) + j + 1;
+			f->b = (i + 1) * (WAVE_W + 1) + j;
+			f->c = (i + 1) * (WAVE_W + 1) + j + 1;
+			//printf( "%d %d %d\n", f->a, f->b, f->c );
+
+			// flip to render underside of wave
+			TG_ASSERT( k < WAVE_FACE_COUNT );
+			f = wave_faces + k++;
+			f->a = i * (WAVE_W + 1) + j + 1;
+			f->c = i * (WAVE_W + 1) + j;
+			f->b = (i + 1) * (WAVE_W + 1) + j;
+			//printf( "%d %d %d\n", f->a, f->b, f->c );
+
+			TG_ASSERT( k < WAVE_FACE_COUNT );
+			f = wave_faces + k++;
+			f->a = i * (WAVE_W + 1) + j + 1;
+			f->c = (i + 1) * (WAVE_W + 1) + j;
+			f->b = (i + 1) * (WAVE_W + 1) + j + 1;
+			//printf( "%d %d %d\n", f->a, f->b, f->c );
+		}
+	}
+	TG_ASSERT( k == WAVE_FACE_COUNT );
 }
 
 void SolveEdges( )
@@ -1107,7 +1154,7 @@ void SolveEdges( )
     }
 }
 
-void SolveWaveParticles( float dt )
+void SolveWave( float dt )
 {
 	// integration
 	for( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
@@ -1139,43 +1186,28 @@ void SolveWaveParticles( float dt )
 	}
 }
 
-void DebugDrawWaveParticle( int i, v3 offset )
-{
-	WaveParticle* p = wave_particles + i;
-	float h = p->h;
-	float x = i % (WAVE_W + 1);
-	float z = i / (WAVE_H + 1);
-
-	pcall_setup( "PushInstance" );
-	lua_pushstring( L, "simple" );
-	lua_pushstring( L, "playerTriangles" );
-	lua_pushnumber( L, offset.x );
-	lua_pushnumber( L, offset.y );
-	lua_pushnumber( L, offset.z );
-	lua_pushnumber( L, 0.15 );
-	lua_pushnumber( L, 0.15 );
-	lua_pushnumber( L, 0.15 );
-	pcall_do( 8, 0 );
-}
-
-void DebugDrawWaveParticles( )
-{
-	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
-	{
-		DebugDrawWaveParticle( i, V3( 10, 0, 10 ) );
-	}
-}
+#define WAVE_OFFSET_X (0.0f)
+#define WAVE_OFFSET_Z (0.0f)
+#define WAVE_SCALE_X  (10.0f)
+#define WAVE_SCALE_Y  (10.0f)
+#define WAVE_SCALE_Z  (10.0f)
 
 v3 GetParticlePosition( int i )
 {
 	WaveParticle* p = wave_particles + i;
-	return V3( (float)(i % (WAVE_W + 1)), p->h, (float)(i / (WAVE_W + 1)) );
+	float x = (float)((i % (WAVE_W + 1)) - (WAVE_W / 2));
+	float z = (float)((i / (WAVE_W + 1)) - (WAVE_H / 2));
+	x *= WAVE_SCALE_X;
+	z *= WAVE_SCALE_Z;
+	x += WAVE_OFFSET_X;
+	z += WAVE_OFFSET_Z;
+	return V3( x, p->h * WAVE_SCALE_Y, z );
 }
 
 void MakeWave( v3 at )
 {
-	float radius = 10.0f;
-	float force = 0.25f;
+	float radius = 20.0f;
+	float force = 5.0f;
 	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
 	{
 		WaveParticle* p = wave_particles + i;
@@ -1190,83 +1222,7 @@ void MakeWave( v3 at )
 	}
 }
 
-void AddWaveTri( int i, int j, v3 a, v3 b, v3 c, int flip )
-{
-	Vertex va, vb, vc;
-	v3 color = WAVE_COLOR;
-	va.position = a;
-	va.color = color;
-	vb.position = b;
-	vb.color = color;
-	vc.position = c;
-	vc.color = color;
-	wave_verts[ i ] = va;
-	wave_verts[ i + 1 ] = vb;
-	wave_verts[ i + 2 ] = vc;
-
-	if ( flip )
-	{
-		wave_indices[ i ] = j;
-		wave_indices[ i + 1 ] = j + 1;
-		wave_indices[ i + 2 ] = j + (WAVE_W + 1) + 1;
-		//printf( "%d %d %d,\t%d %d %d\n", i, i + 1, i + 2, wave_indices[ i ], wave_indices[ i + 1 ], wave_indices[ i + 2 ] );
-	}
-
-#if 1
-	else
-	{
-		wave_indices[ i ] = j;
-		wave_indices[ i + 1 ] = j + (WAVE_W + 1);
-		wave_indices[ i + 2 ] = j + (WAVE_W + 1) + 1;
-		//printf( "%d %d %d,\t%d %d %d\n", i, i + 1, i + 2, wave_indices[ i ], wave_indices[ i + 1 ], wave_indices[ i + 2 ] );
-	}
-#endif
-}
-
-void AddWaveQuad( int i, int j, int x, int z )
-{
-	int dim = 1;
-	x -= WAVE_W / 2;
-	z -= WAVE_H / 2;
-	int scale = 3;
-	x *= scale;
-	z *= scale;
-	dim *= scale;
-	v3 a = V3( x, initialWaveY, z );
-	v3 b = V3( x + dim, initialWaveY, z );
-	v3 c = V3( x + dim, initialWaveY, z + dim );
-	AddWaveTri( i, j, a, c, b, 1 );
-	AddWaveTri( i + 3, j, a, b, c, 0 );
-
-	a = V3( x, initialWaveY, z );
-	b = V3( x, initialWaveY, z + dim );
-	c = V3( x + dim, initialWaveY, z + dim );
-	AddWaveTri( i + 6, j, a, b, c, 1 );
-	AddWaveTri( i + 9, j, a, c, b, 0 );
-}
-
-void InitWaveVerts( )
-{
-	int i = 0;
-	int j = 0;
-	for ( int row = 0; row < WAVE_H; ++row )
-	{
-		for ( int col = 0; col < WAVE_W; ++col )
-		{
-			TG_ASSERT( i + 12 <= WAVE_VERT_COUNT );
-			AddWaveQuad( i, j, row, col );
-			i += 12;
-			j += 1;
-		}
-		j += 1;
-	}
-}
-
-v3 lerp( v3 a, v3 b, float t )
-{
-	v3 c = sub( b, a );
-	return add( a, sMul( c, t ) );
-}
+#define WAVE_AMPLITUDE 30.0f
 
 v3 CalcWaveColor( v3 p )
 {
@@ -1293,19 +1249,17 @@ void DrawWave( )
 	static float t = 0;
 	t += dt;
 
-	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
-		wave_indices_cache[ i ] = 0;
-
-	for ( int i = 0; i < WAVE_VERT_COUNT; i += 3 )
+	for ( int i = 0; i < WAVE_FACE_COUNT; ++i )
 	{
-		Vertex a = wave_verts[ i ];
-		Vertex b = wave_verts[ i + 1 ];
-		Vertex c = wave_verts[ i + 2 ];
-#define DO_WAVE_ANIM( vert ) \
-		vert.position.y = cosf( t / 2.0f + vert.position.z / 15.0f ) * WAVE_AMPLITUDE + initialWaveY
-		DO_WAVE_ANIM( a );
-		DO_WAVE_ANIM( b );
-		DO_WAVE_ANIM( c );
+		WaveFace* f = wave_faces + i;
+		Vertex a;
+		Vertex b;
+		Vertex c;
+		//printf( "%d %d %d\n", f->a, f->b, f->c );
+		a.position = GetParticlePosition( f->a );
+		b.position = GetParticlePosition( f->b );
+		c.position = GetParticlePosition( f->c );
+		//printf( "%f %f %f, %f %f %f, %f %f %f\n", a.position.x, a.position.y, a.position.z, b.position.x, b.position.y, b.position.z, c.position.x, c.position.y, c.position.z );
 		v3 n = norm( cross( sub( b.position, a.position ), sub( b.position, c.position ) ) );
 		a.normal = n;
 		b.normal = n;
@@ -1314,41 +1268,11 @@ void DrawWave( )
 		b.color = CalcWaveColor( b.position );
 		c.color = CalcWaveColor( c.position );
 
-#if 0
-		// use wave particles' heights to offset
-		// the big wave along the big wave's normals
-		int ia = wave_indices[ i ];
-		int ib = wave_indices[ i + 1 ];
-		int ic = wave_indices[ i + 2 ];
-		float h_scale = 0.1f;
-		float ha = wave_particles[ ia ].h * h_scale;
-		float hb = wave_particles[ ib ].h * h_scale;
-		float hc = wave_particles[ ic ].h * h_scale;
-		a.position = add( a.position, sMul( n, ha ) );
-		b.position = add( b.position, sMul( n, hb ) );
-		c.position = add( c.position, sMul( n, hc ) );
-#endif
-
-		wave_verts[ i ] = a;
-		wave_verts[ i + 1 ] = b;
-		wave_verts[ i + 2 ] = c;
 		PushTransformedVert( a, call );
 		PushTransformedVert( b, call );
 		PushTransformedVert( c, call );
-
-#if 0
-#define DO_DEBUG_THING( letter ) \
-		if ( 1 ) \
-		{ \
-			printf( "%d\n", i##letter ); \
-			DebugDrawWaveParticle( i##letter, letter.position ); \
-			wave_indices_cache[ i##letter ] = 1; \
-		}
-		DO_DEBUG_THING( a );
-		DO_DEBUG_THING( b );
-		DO_DEBUG_THING( c );
-#endif
 	}
+	//printf( "---\n" );
 }
 
 int WAVE_DEBOUNCE = 0;
@@ -1364,9 +1288,9 @@ int DetectWaveCollision( )
 	int found = 0;
 	v3 a = player_position;
 
-	for ( int i = 0; i < WAVE_VERT_COUNT; ++i )
+	for ( int i = 0; i < WAVE_PARTICLE_COUNT; ++i )
 	{
-		v3 b = wave_verts[ i ].position;
+		v3 b = GetParticlePosition( i );
 		float d = len( sub( b, a ) );
 		if ( d < (player_radius + 2.0f) )
 		{
@@ -1385,7 +1309,7 @@ int main( )
 {
 	t = 0;
 	SetCDW( );
-	PRINT_CWD( );
+	//PRINT_CWD( );
 
 	glfwSetErrorCallback( ErrorCB );
 
@@ -1427,6 +1351,7 @@ int main( )
 	glFrontFace( GL_CCW );
 #endif
 
+	// should happen in tinygl
 	GLuint vao;
 	glGenVertexArrays( 1, &vao );
 	glBindVertexArray( vao );
@@ -1458,9 +1383,7 @@ int main( )
 	InitMeshes( );
 	MakeMeshes( L );
 
-	InitWaveVerts( );
-	InitWaveParticles( );
-
+	InitWave( );
 	unsigned frame_count = 0;
 
 	tgFramebuffer fbo;
@@ -1484,12 +1407,12 @@ int main( )
 		DoPlayerCollision( );
 		if ( !DetectWaveCollision( ) ) WAVE_DEBOUNCE = 0;
 		Tick( L, dt );
-		DrawWave( );
-		//DebugDrawWaveParticles( );
-		//SolveWaveParticles( dt );
 
-		//if ( !(frame_count % (60 * 10)) )
-		//	MakeWave( V3( 10, 0, 10 ) );
+		SolveWave( dt );
+		DrawWave( );
+
+		if ( !(frame_count % (60)) )
+			MakeWave( player_position );
 
 		for ( int i = 0; i < meshes.render_count; ++i )
 		{
