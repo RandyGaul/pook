@@ -32,7 +32,8 @@ float cam[ 16 ];
 tgShader simple;
 struct Vertex;
 int mouse_moved;
-int initialWaveY = -50;
+int initialWaveY = -25;
+float player_radius = 7.0f;
 
 lua_State* L;
 
@@ -988,7 +989,6 @@ void DoPlayerCollision( )
 		v3 b = CalcCubeL( cube, player_position );
 		v3 n = sub( b, a );
 		float d = len( n );
-		float player_radius = 7.0f;
 		if ( d < player_radius && d != 0.0f )
 		{
 			float id = 1.0f / d;
@@ -1114,10 +1114,43 @@ void DrawWave( )
 		a.color = CalcWaveColor( a.position.y );
 		b.color = CalcWaveColor( b.position.y );
 		c.color = CalcWaveColor( c.position.y );
+		wave_verts[ i ] = a;
+		wave_verts[ i + 1 ] = b;
+		wave_verts[ i + 2 ] = c;
 		PushTransformedVert( a, call );
 		PushTransformedVert( b, call );
 		PushTransformedVert( c, call );
 	}
+}
+
+int WAVE_DEBOUNCE = 0;
+void HitWaveCB( )
+{
+	if ( WAVE_DEBOUNCE ) return;
+	WAVE_DEBOUNCE = 1;
+	printf( "HIT THE WAVE\n" );
+}
+
+int DetectWaveCollision( )
+{
+	int found = 0;
+	v3 a = player_position;
+
+	for ( int i = 0; i < WAVE_VERT_COUNT; ++i )
+	{
+		v3 b = wave_verts[ i ].position;
+		float d = len( sub( b, a ) );
+		if ( d < (player_radius + 2.0f) )
+		{
+			found = 1;
+			break;
+		}
+	}
+
+	if ( found )
+		HitWaveCB( );
+
+	return found;
 }
 
 int main( )
@@ -1203,6 +1236,7 @@ int main( )
 
 		dt = ttTime( );
 		DoPlayerCollision( );
+		if ( !DetectWaveCollision( ) ) WAVE_DEBOUNCE = 0;
 		Tick( L, dt );
 		DrawWave( );
 

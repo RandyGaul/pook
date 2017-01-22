@@ -5,6 +5,11 @@ function GenerateCow()
 	cow.verts = ObjLoader.getVerts("assets/models/coin.obj")
 	cow.p = v3(math.random(-5, 5), math.random(-5, 5), math.random(-5, 5))
 	cow.spinAngle = 0
+	cow.alive = true
+
+	cow.id = THE_COIN_ID
+	THE_COIN_ID = THE_COIN_ID + 1
+	THE_COINS[ cow.id ] = cow
 
 	cow.GenerateMesh = function(self)
 		if GeneratedMeshes["cow"] ~= nil then
@@ -17,6 +22,7 @@ function GenerateCow()
 	end
 
 	cow.Render = function(self)
+		if not self.alive then return end
 		local angle = self.spinAngle
 		local rx = 0
 		local ry = 1

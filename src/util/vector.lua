@@ -10,8 +10,12 @@ function v3:__call(x, y, z)
 	return o
 end
 
+function length( a )
+	return math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z)
+end
+
 function v3:normalize()
-	magnitude = math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+	magnitude = length(self)
 	self.x = self.x / magnitude
 	self.y = self.y / magnitude
 	self.z = self.z / magnitude

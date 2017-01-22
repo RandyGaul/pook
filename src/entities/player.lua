@@ -24,8 +24,8 @@ end
 
 -- this is COMPLETE shit, will replace once randy gets collision stuff working
 local function TouchingGround(self)
-	if ( self.p.y <= WORLD_BOTTOM ) then 
-		self.touching_ground = true 
+	if ( self.p.y <= WORLD_BOTTOM ) then
+		self.touching_ground = true
 		return true
 	end
 
@@ -96,6 +96,17 @@ local function Update(self)
 	SetPlayerPosition( self.p.x, self.p.y, self.p.z )
 	SetPlayerVelocity( self.v.x, self.v.y, self.v.z )
 	UpdateCamLua()
+
+	-- collide with coins and remove them
+	for k, v in pairs( THE_COINS ) do
+		local dist = length(v.p - player.p)
+		if dist < (7 + 2) then
+			print( "HIT THE COIN" )
+			v.alive = false
+			THE_COINS[ k ] = nil
+			-- play a sound effect too?
+		end
+	end
 end
 
 function GeneratePlayer()

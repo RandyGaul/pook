@@ -7,6 +7,12 @@ world = {}
 math.randomseed(os.time())
 GRAVITY = 100
 
+THE_COINS = {}
+THE_COIN_ID = 0
+
+THE_BOXES = {}
+THE_BOXES_ID = 0
+
 function JumpHeight( height )
     return math.sqrt( 2 * GRAVITY * height )
 end
