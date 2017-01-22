@@ -22,7 +22,7 @@ enum
 	TG_UNKNOWN,
 };
 
-#define FBO_ON 1
+#define FBO_ON 0
 
 typedef struct
 {
@@ -717,7 +717,7 @@ static void tgRender( tgDrawCall* call )
 	if (FBO_ON)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo_id);
-	
+
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glEnable(GL_DEPTH_TEST);
@@ -807,12 +807,12 @@ static void tgRender( tgDrawCall* call )
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear( GL_COLOR_BUFFER_BIT );
 		glDisable(GL_DEPTH_TEST);
-	
+
 		tgSetActiveShader(&fbo->shader);
-	
+
 		glBindBuffer(GL_ARRAY_BUFFER, fbo->quad_buffer_id);
 		glBindTexture(GL_TEXTURE_2D, fbo->color_buffer_id);
-	
+
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(1);

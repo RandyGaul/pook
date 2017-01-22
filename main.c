@@ -116,7 +116,7 @@ void MouseCB(GLFWwindow* window, double x, double y)
 void Reshape( GLFWwindow* window, int width, int height )
 {
 	printf( "RESHAPE: %d %d\n", width, height );
-	GLfloat aspect = (GLfloat) height / (GLfloat) width;
+	GLfloat aspect = (GLfloat)height / (GLfloat)width;
 	float fov = 1.48353f;
 	tgPerspective( projection, fov, aspect, 0.1f, 10000.0f );
 	glViewport( 0, 0, width, height );
@@ -1343,9 +1343,8 @@ int main( )
 	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
-	int width = 1200;
-	int height = 1200;
-
+	int width = 600;
+	int height = 600;
 	window = glfwCreateWindow( width, height, "pook", NULL, NULL );
 
 	if ( !window )
@@ -1358,10 +1357,13 @@ int main( )
 	glfwSetCursorPosCallback( window, MouseCB );
 	glfwSetFramebufferSizeCallback( window, Reshape );
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetWindowAspectRatio( window, 1, 1 );
 
 	glfwMakeContextCurrent( window );
 	gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress );
 	glfwSwapInterval( 1 );
+
+	glfwGetFramebufferSize( window, &width, &height );
 	Reshape( window, width, height );
 
 	void* ctx = tgMakeCtx( 32 );
