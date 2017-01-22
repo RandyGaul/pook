@@ -25,6 +25,7 @@ local function Render(self)
 end
 
 local function Update(self)
+	do return end
 	self.yDisplacement = math.sin(self.platformFrequencyMult * t + self.platformWaveOffset)
 		* self.yMoveDistance
 	self.p.y = self.originalY + self.yDisplacement

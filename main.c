@@ -32,6 +32,7 @@ float cam[ 16 ];
 tgShader simple;
 struct Vertex;
 int mouse_moved;
+int initialWaveY = -50;
 
 lua_State* L;
 
@@ -1038,7 +1039,6 @@ void AddWaveTri( int i, v3 a, v3 b, v3 c )
 
 void AddWaveQuad( int i, int x, int z )
 {
-	int y = -50;
 	int dim = 1;
 	x -= WAVE_W / 2;
 	z -= WAVE_H / 2;
@@ -1046,15 +1046,15 @@ void AddWaveQuad( int i, int x, int z )
 	x *= scale;
 	z *= scale;
 	dim *= scale;
-	v3 a = V3( x, y, z );
-	v3 b = V3( x + dim, y, z );
-	v3 c = V3( x + dim, y, z + dim );
+	v3 a = V3( x, initialWaveY, z );
+	v3 b = V3( x + dim, initialWaveY, z );
+	v3 c = V3( x + dim, initialWaveY, z + dim );
 	AddWaveTri( i, a, c, b );
 	AddWaveTri( i + 3, a, b, c );
 
-	a = V3( x, y, z );
-	b = V3( x, y, z + dim );
-	c = V3( x + dim, y, z + dim );
+	a = V3( x, initialWaveY, z );
+	b = V3( x, initialWaveY, z + dim );
+	c = V3( x + dim, initialWaveY, z + dim );
 	AddWaveTri( i + 6, a, b, c );
 	AddWaveTri( i + 9, a, c, b );
 }
@@ -1081,7 +1081,7 @@ v3 lerp( v3 a, v3 b, float t )
 
 v3 CalcWaveColor( float y )
 {
-	y += 30.0f;
+	y += WAVE_AMPLITUDE;
 	y /= WAVE_AMPLITUDE * 2.0f;
 	v3 red = V3( 0.8f, 0.2f, 0.4f );
 	v3 blue = WAVE_COLOR;
@@ -1101,7 +1101,7 @@ void DrawWave( )
 		Vertex b = wave_verts[ i + 1 ];
 		Vertex c = wave_verts[ i + 2 ];
 #define DO_WAVE_ANIM( vert ) \
-		vert.position.y = cosf( t / 2.0f + vert.position.z / 15.0f ) * WAVE_AMPLITUDE
+		vert.position.y = cosf( t / 2.0f + vert.position.z / 15.0f ) * WAVE_AMPLITUDE + initialWaveY
 		DO_WAVE_ANIM( a );
 		DO_WAVE_ANIM( b );
 		DO_WAVE_ANIM( c );
