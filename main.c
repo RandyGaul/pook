@@ -945,7 +945,7 @@ void DoPlayerCollision( )
 		v3 b = CalcCubeL( cube, player_position );
 		v3 n = sub( b, a );
 		float d = len( n );
-		float player_radius = 6.0f;
+		float player_radius = 7.0f;
 		if ( d < player_radius && d != 0.0f )
 		{
 			float id = 1.0f / d;

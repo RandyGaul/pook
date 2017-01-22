@@ -4,27 +4,42 @@ JUMP_HEIGHT = 20
 
 function SetPlayerPositionFromC( x, y, z )
 	if not player then return end
+	player.p.y = math.max(player.p.y, y)
+	do return end
+
 	player.p.x = x
-	player.p.y = y
 	player.p.z = z
 end
 
 function SetPlayerVelocityFromC( x, y, z )
 	if not player then return end
-	player.v.x = x
-	player.v.y = y
-	player.v.z = z
+	player.v.x = 0
+	player.v.y = 0
+	player.v.z = 0
 end
 
 function SetPlayerTouchingGround( val )
-	if val == nil then print"WTFFFFF" end
 	player.touching_ground = val
 end
 
--- this is shit, will replace once randy gets collision stuff working
+-- this is COMPLETE shit, will replace once randy gets collision stuff working
 local function TouchingGround(self)
-	if ( self.p.y <= WORLD_BOTTOM ) then self.touching_ground = true end
-	return self.touching_ground
+	if ( self.p.y <= WORLD_BOTTOM ) then 
+		self.touching_ground = true 
+		return true
+	end
+
+	for i, v in pairs(platforms) do
+		local groundCheckOffset = 7.5
+		if self.p.x > (v.p.x - v.s.x) and self.p.x < (v.p.x + v.s.x) and self.p.z > (v.p.z - v.s.z) and self.p.z < (v.p.z + v.s.z)
+			and (self.p.y - groundCheckOffset) > (v.p.y - v.s.y) and (self.p.y - groundCheckOffset) < (v.p.y + v.s.y) then
+			self.touching_ground = true
+			return true
+		end
+	end
+
+	self.touching_ground = false
+	return false
 end
 
 local function InitJump(self)
@@ -63,7 +78,12 @@ local function Update(self)
 		self.touching_ground = false
 	end
 
-	grav = v3( 0, -GRAVITY, 0 )
+	if not self:TouchingGround() then
+		grav = v3( 0, -GRAVITY, 0 )
+	else
+		grav = v3(0, 0, 0)
+	end
+
 	self.v = self.v + grav * dt
 	self.p = self.p + self.v * dt
 
