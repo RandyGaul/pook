@@ -1015,8 +1015,8 @@ void DoPlayerCollision( )
 	}
 }
 
-#define WAVE_W 100
-#define WAVE_H 100
+#define WAVE_W 50
+#define WAVE_H 50
 #define WAVE_VERT_COUNT (WAVE_W * WAVE_H * 2 * 3 * 2)
 #define WAVE_COLOR V3( 0.6f, 0.75f, 0.95f )
 #define WAVE_AMPLITUDE 30.0f
@@ -1043,7 +1043,7 @@ void AddWaveQuad( int i, int x, int z )
 	int dim = 1;
 	x -= WAVE_W / 2;
 	z -= WAVE_H / 2;
-	int scale = 10;
+	int scale = 3;
 	x *= scale;
 	z *= scale;
 	dim *= scale;
@@ -1080,14 +1080,22 @@ v3 lerp( v3 a, v3 b, float t )
 	return add( a, sMul( c, t ) );
 }
 
-v3 CalcWaveColor( float y )
+v3 CalcWaveColor( v3 p )
 {
+	float y = p.y;
 	y -= initialWaveY;
 	y += WAVE_AMPLITUDE;
 	y /= WAVE_AMPLITUDE * 2.0f;
 	v3 red = V3( 0.8f, 0.2f, 0.4f );
 	v3 blue = WAVE_COLOR;
 	v3 c = lerp( red, blue, y );
+	float l = len( sub( p, player_position ) );
+	if ( l < 20.0f )
+	{
+		float t = l / 20.0f;
+		v3 black = V3( 1, 0, 0 );
+		c = lerp( black, c, t );
+	}
 	return c;
 }
 
@@ -1111,9 +1119,9 @@ void DrawWave( )
 		a.normal = n;
 		b.normal = n;
 		c.normal = n;
-		a.color = CalcWaveColor( a.position.y );
-		b.color = CalcWaveColor( b.position.y );
-		c.color = CalcWaveColor( c.position.y );
+		a.color = CalcWaveColor( a.position );
+		b.color = CalcWaveColor( b.position );
+		c.color = CalcWaveColor( c.position );
 		wave_verts[ i ] = a;
 		wave_verts[ i + 1 ] = b;
 		wave_verts[ i + 2 ] = c;

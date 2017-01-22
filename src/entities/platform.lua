@@ -52,7 +52,7 @@ function GeneratePlatform()
 		-- print("y:"..y)
 		-- print("z:"..z)
 		-- print("x: "..x..", y:"..y..", z:"..z..", sx:"..sx..", sy:"..sy..", sz:"..sz)
-		
+
 		self.p.x = x
 		self.p.y = y
 		self.p.z = z
