@@ -105,7 +105,7 @@ local function Update(self)
 		if dist < (playerRadius + 2) then
 			v.alive = false
 			THE_COINS[ k ] = nil
-			-- play a sound effect too?
+			AdjustGameTime(-10)
 		end
 	end
 end

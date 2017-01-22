@@ -22,10 +22,13 @@
 #include <stdio.h>
 #include <float.h>
 
+const float GAME_DURATION = 30;
+
 GLFWwindow* window;
 
 // Same MVP being used for every single object for now.
 float dt;
+float t;
 float projection[ 16 ];
 float mvp[ 16 ];
 float cam[ 16 ];
@@ -331,6 +334,25 @@ int UpdateCam( lua_State *L )
 	tgSendF32( &simple, "u_eye", 1, (float*)&dir, 4 );
 	tgDeactivateShader( );
 	UpdateMvp();
+	return 0;
+}
+
+// make more generic. jk lol, this shit is gonna stay
+void UpdateTimeUniform(tgShader shader)
+{
+	float tf = t / GAME_DURATION;
+	tgSetActiveShader(&shader);
+	tgSendF32(&shader, "u_time", 1, &t, 1);
+	tgSendF32(&shader, "u_timeFraction", 1, &tf, 1);
+	tgDeactivateShader();
+}
+
+int AdjustGameTime( lua_State *L )
+{
+	printf("adjust dat shiet");
+	float newT = t + (float)luaL_checknumber(L, -1);
+	lua_settop(L, 0);
+	t = newT > 0 ? newT : t;
 	return 0;
 }
 
@@ -1361,6 +1383,7 @@ int DetectWaveCollision( )
 
 int main( )
 {
+	t = 0;
 	SetCDW( );
 	PRINT_CWD( );
 
@@ -1430,6 +1453,7 @@ int main( )
 	Register( L, ClearCubes );
 	Register( L, SetPlayerPosition );
 	Register( L, SetPlayerVelocity );
+	Register( L, AdjustGameTime );
 	Dofile( L, "src/core/init.lua" );
 	InitMeshes( );
 	MakeMeshes( L );
@@ -1455,6 +1479,8 @@ int main( )
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 		dt = ttTime( );
+		t += dt;
+		UpdateTimeUniform(fbo.shader);
 		DoPlayerCollision( );
 		if ( !DetectWaveCollision( ) ) WAVE_DEBOUNCE = 0;
 		Tick( L, dt );

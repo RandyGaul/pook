@@ -4,8 +4,13 @@ in vec2 TexCoords;
 out vec4 color;
 
 uniform sampler2D screenTexture;
+uniform float u_time;
+uniform float u_timeFraction;
 
 void main()
 {
-	color = texture(screenTexture, TexCoords);
+	float modifier = min(u_timeFraction, 1);
+	float yOffset = cos((TexCoords.x + u_time * mix(.4, .8, modifier)) * (5 + 1 * modifier)) * .17 * modifier;
+	vec2 lookup = vec2(TexCoords.x, clamp(TexCoords.y + yOffset * TexCoords.y, 0, 1));
+	color = texture(screenTexture, lookup);
 }
