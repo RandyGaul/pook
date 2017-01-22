@@ -10,11 +10,11 @@ local function GenerateMesh()
 		{1, -1, -1}		--H
 
 	PushMeshLua({C,A,B,C,D,A,H,D,C,H,G,D,H,F,G,G,F,E,B,E,
-		F,B,A,E,D,E,A,D,G,E,F,C,B,H,C,F}, "cube")
+		F,B,A,E,D,E,A,D,G,E,F,C,B,H,C,F}, "skybox")
 end
 
 local function Render(self)
-	PushInstance("simple", "cube", 0, 0, 0, self.s.x, self.s.y, self.s.z)
+	PushInstance("simple", "skybox", 0, 0, 0, self.s.x, self.s.y, self.s.z)
 end
 
 function GenerateSkybox()

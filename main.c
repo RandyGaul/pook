@@ -24,10 +24,6 @@
 
 GLFWwindow* window;
 
-GLfloat quadVertices[] = {
-	-1.0f, 1.0f, 0.0f, 1.0f
-};
-
 // Same MVP being used for every single object for now.
 float dt;
 float projection[ 16 ];
@@ -36,7 +32,7 @@ float cam[ 16 ];
 tgShader simple;
 struct Vertex;
 int mouse_moved;
-int initialWaveY = 0;
+int initialWaveY = -15;
 float player_radius = 7.0f;
 
 lua_State* L;
@@ -1419,6 +1415,7 @@ int main( )
 
 	m4Mul( projection, cam, mvp );
 	UpdateMvp();
+	glViewport(0, 0, width, height);
 
 	// init lua
 	L = luaL_newstate( );
@@ -1444,7 +1441,7 @@ int main( )
 
 	tgFramebuffer fbo;
 
-	tgGenerateFramebuffer(&fbo, quadVertices);
+	tgGenerateFramebuffer(&fbo);
 	tgShader postProcessShader;
 	char* vs = (char*)ReadFileToMemory( "./assets/shaders/postprocess.vs", 0 );
 	char* ps = (char*)ReadFileToMemory( "./assets/shaders/postprocess.ps", 0 );

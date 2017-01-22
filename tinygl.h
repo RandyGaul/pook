@@ -4,7 +4,15 @@
 
 #define TG_OFFSET_OF( type, member ) ((uint32_t)((size_t)(&((type*)0)->member)))
 #define TG_DEBUG_CHECKS 1
+GLfloat quadVertices[] = {
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
 
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
+};	
 enum
 {
 	TG_FLOAT,
@@ -98,6 +106,7 @@ typedef struct
 	uint32_t color_buffer_id;
 	uint32_t quad_buffer_id;
 	tgShader shader;
+	GLfloat* quadVertices;
 } tgFramebuffer;
 
 typedef struct
@@ -186,7 +195,7 @@ void* tgMakeCtx( uint32_t max_draw_calls )
 	return ctx;
 }
 
-void tgGenerateFramebuffer(tgFramebuffer* tgFbo, GLfloat* quadVertices)
+void tgGenerateFramebuffer(tgFramebuffer* tgFbo)
 {
 	// Generate the frame buffer
 	GLuint fbo;
@@ -219,15 +228,17 @@ void tgGenerateFramebuffer(tgFramebuffer* tgFbo, GLfloat* quadVertices)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// Prepare quad
 	GLuint quadBuffer;
 	glGenBuffers(1, &quadBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, quadBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	tgFbo->fbo_id = fbo;
 	tgFbo->color_buffer_id = colorBuffer;
 	tgFbo->quad_buffer_id = quadBuffer;
+	tgFbo->quadVertices = quadVertices;
 }
 
 void tgFreeCtx( void* ctx )
@@ -699,8 +710,12 @@ void tgDoMap( tgDrawCall* call, tgRenderable* render )
 static void tgRender( tgDrawCall* call )
 {
 	// add a check to make sure the thing is valid
-	// tgFramebuffer* fbo = call->fbo;
-	// glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo_id);
+	tgFramebuffer* fbo = call->fbo;
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo_id);
+
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glEnable(GL_DEPTH_TEST);
 	tgRenderable* render = call->r;
 	uint32_t texture_count = call->texture_count;
 	uint32_t* textures = call->textures;
@@ -780,13 +795,22 @@ static void tgRender( tgDrawCall* call )
 	glUseProgram( 0 );
 		TG_PRINT_GL_ERRORS( );
 
-	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	// glClear(GL_COLOR_BUFFER_BIT);
-	// glDisable(GL_DEPTH_TEST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear( GL_COLOR_BUFFER_BIT );
+	glDisable(GL_DEPTH_TEST);
 
-	// tgSetActiveShader( render->program );
-	// glBind
+	tgSetActiveShader(&fbo->shader);
 
+	glBindBuffer(GL_ARRAY_BUFFER, fbo->quad_buffer_id);
+	glBindTexture(GL_TEXTURE_2D, fbo->color_buffer_id);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void tgPresent( void* ctx )
