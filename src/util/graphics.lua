@@ -22,8 +22,11 @@ function MakeMeshes( )
 	end
 end
 
-function PushMeshLua(verts, name, color)
+function PushMeshLua(verts, name, color, convert)
 	for i, j in ipairs(verts) do
+		if convert then
+			j = {j.x, j.y, j.z}
+		end
 		if color ~= nil then
 			PushVert(j[1], j[2], j[3], color[1], color[2], color[3])
 		else		

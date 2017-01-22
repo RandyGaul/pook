@@ -4,9 +4,15 @@ setmetatable(v3, v3)
 
 function v3:__call(x, y, z)
 	local o = setmetatable({}, self)
-	o.x = x
-	o.y = y
-	o.z = z
+	if type(x) == "table" then
+		o.x = x.x
+		o.y = x.y
+		o.z = x.z
+	else
+		o.x = x
+		o.y = y
+		o.z = z
+	end
 	return o
 end
 
@@ -38,6 +44,15 @@ function v3.__mul(a, b)
 	end
 
 	return a.x * b.x + a.y * b.y + a.z * b.z
+end
+
+function v3.__div(a, b)
+	return v3(a.x / b, a.y / b, a.z / b)
+end
+
+function v3:normalized()
+	magnitude = math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+	return v3(self.x / magnitude, self.y / magnitude, self.z / magnitude)
 end
 
 return v3

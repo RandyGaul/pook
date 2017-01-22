@@ -7,6 +7,7 @@ if not firstLoadComplete or KeyPressed("r") then
 	dofile("src/util/cam.lua")
 	dofile("src/util/graphics.lua")
 	dofile("src/util/pooler.lua")
+	dofile("src/util/spheregenerator.lua")
 	dofile("src/entities/cow.lua")
 	dofile("src/entities/platform.lua")
 	dofile("src/entities/player.lua")
