@@ -20,7 +20,7 @@ local function ConfigurePlatform( platform)
 	while not success do
 		dir = DIRECTIONS[math.random(1, 4)]
 		local prev = platforms[math.random(1, #platforms)]
-		local newScale = v3(math.random(3, 6), math.random(4, 7), math.random(3, 6))
+		local newScale = v3(math.random(3, 6), math.random(2, 5), math.random(3, 6))
 		local newPos = v3(prev.p.x + (prev.s.x + newScale.x + RandomPlatformOffset()) * dir.x,
 				prev.p.y + (prev.s.y + newScale.y + RandomPlatformOffset()) * SIGNS[math.random(1, 2)],
 				prev.p.z + (prev.s.z + newScale.z + RandomPlatformOffset()) * dir.z
@@ -60,6 +60,10 @@ function GenerateLevel(numPlatforms)
 	end
 
 	local midPlat = platforms[math.floor(#platforms/2)];
-	midPlat.p.y = midPlat.p.y + 40
-	player.p = v3(midPlat.p.x, midPlat.p.y + 12, midPlat.p.z)
+	midPlat.p.y = midPlat.p.y + 15
+	player.p = v3(midPlat.p.x, midPlat.p.y + midPlat.s.y + 5, midPlat.p.z)
+
+	for i, v in pairs(platforms) do
+		v:AddCollider()
+	end
 end

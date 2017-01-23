@@ -7,7 +7,7 @@ camInitialized = true
 
 sensitivity = .3
 maxAbsDeg = 360
-camDist = 5
+camDist = 8.5
 camOffsetY = 2
 up = {x = 0, y = 1, z = 0}
 

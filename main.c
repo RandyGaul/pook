@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <float.h>
 
-const float GAME_DURATION = 30;
+const float GAME_DURATION = 10;
 
 GLFWwindow* window;
 
@@ -44,7 +44,7 @@ tgShader simple;
 struct Vertex;
 int mouse_moved;
 int initialWaveY = -15;
-float player_radius = 7.0f;
+float player_radius = 5.0f;
 
 lua_State* L;
 
@@ -123,7 +123,7 @@ void MouseCB(GLFWwindow* window, double x, double y)
 
 void Reshape( GLFWwindow* window, int width, int height )
 {
-	printf( "RESHAPE: %d %d\n", width, height );
+	// printf( "RESHAPE: %d %d\n", width, height );
 	GLfloat aspect = (GLfloat)height / (GLfloat)width;
 	float fov = 1.48353f;
 	tgPerspective( projection, fov, aspect, 0.1f, 10000.0f );
@@ -364,12 +364,9 @@ void UpdateTimeUniform(tgShader shader)
 	tgDeactivateShader();
 }
 
-int AdjustGameTime( lua_State *L )
+int ResetGameTime( lua_State *L )
 {
-	printf("adjust dat shiet");
-	float newT = t + (float)luaL_checknumber(L, -1);
-	lua_settop(L, 0);
-	t = newT > 0 ? newT : t;
+	t = 0;
 	return 0;
 }
 
@@ -1327,6 +1324,7 @@ int DetectWaveCollision( )
 tsContext* ts_ctx;
 tsPlaySoundDef jump_def;
 tsPlaySoundDef coin_def;
+tsPlaySoundDef death_def;
 
 int PlayJump(lua_State*L)
 {
@@ -1337,6 +1335,12 @@ int PlayJump(lua_State*L)
 int PlayCoin(lua_State* L)
 {
 	tsPlaySound(ts_ctx, coin_def);
+	return 0;
+}
+
+int PlayDeathSound(lua_State* L)
+{
+	tsPlaySound(ts_ctx, death_def);
 	return 0;
 }
 
@@ -1355,7 +1359,7 @@ void ResetGameState()
 	Register( L, ClearCubes );
 	Register( L, SetPlayerPosition );
 	Register( L, SetPlayerVelocity );
-	Register( L, AdjustGameTime );
+	Register( L, ResetGameTime );
 	Register(L, PlayCoin);
 	Register(L, PlayJump);
 	Register(L, ResetGameFromLua);
@@ -1386,8 +1390,10 @@ int main( )
 
 	tsLoadedSound jump = tsLoadWAV("assets/sounds/jump.wav");
 	tsLoadedSound coin = tsLoadWAV("assets/sounds/coin.wav");
+	tsLoadedSound death = tsLoadWAV("assets/sounds/death.wav");
 	jump_def = tsMakeDef(&jump);
 	coin_def = tsMakeDef(&coin);
+	death_def = tsMakeDef(&death);
 
 	SetCDW( );
 	ResetGameState();

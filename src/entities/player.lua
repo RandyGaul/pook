@@ -1,6 +1,6 @@
 playerSpeed = 40
-playerRadius = 7
-WORLD_BOTTOM = -5000
+playerRadius = 5
+WORLD_BOTTOM = -200
 JUMP_HEIGHT = 20
 
 function SetPlayerPositionFromC( x, y, z )
@@ -25,11 +25,6 @@ end
 
 -- this is COMPLETE shit, will replace once randy gets collision stuff working
 local function TouchingGround(self)
-	if ( self.p.y <= WORLD_BOTTOM ) then
-		self.touching_ground = true
-		return true
-	end
-
 	for i, v in pairs(platforms) do
 		local groundCheckOffset = playerRadius + 5
 		if self.p.x > (v.p.x - v.s.x) and self.p.x < (v.p.x + v.s.x) and self.p.z > (v.p.z - v.s.z) and self.p.z < (v.p.z + v.s.z)
@@ -88,6 +83,7 @@ local function Update(self)
 	end
 
 	self.v = self.v + grav * dt
+	self.v.y = math.max(self.v.y, -60)
 	self.p = self.p + self.v * dt
 
 	-- ghetto ground collision
@@ -106,16 +102,26 @@ local function Update(self)
 		if dist < (playerRadius + 2) then
 			v.alive = false
 			THE_COINS[ k ] = nil
-			AdjustGameTime(-10)
+			ResetGameTime()
 			PlayCoin()
+			NUM_REMAINING_COINS = NUM_REMAINING_COINS - 1
+			if NUM_REMAINING_COINS == 0 then
+				BLOCK_COLOR = {1, 0, 0}
+			end
 		end
 	end
 
-	for k, v in pairs(sharks) do
-		local dist = length(v.p - player.p)
-		if dist < (playerRadius + SHARK_RADIUS) then
-			ResetGameFromLua()
+	if sharks then
+		for k, v in pairs(sharks) do
+			local dist = length(v.p - player.p)
+			if dist < (playerRadius + SHARK_RADIUS) then
+				ResetGameFromLua()
+			end
 		end
+	end
+
+	if ( self.p.y <= WORLD_BOTTOM ) then
+		ResetGameFromLua()
 	end
 end
 
@@ -129,7 +135,7 @@ function GeneratePlayer()
 	player.v = v3(0, 0, 0)
 
 	player.jumping = false
-	player.touching_ground = true;
+	player.touching_ground = false;
 
 	player.GenerateMesh = function(self)
 		PushMeshLua(self.verts, "playerTriangles", nil, true)

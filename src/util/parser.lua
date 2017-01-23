@@ -55,8 +55,6 @@ function ObjLoader.getVerts(filename)
 		return VertCache[filename]
 	end
 
-	print("getting verts for "..filename)
-
 	local triangleVerts, quadVerts = createLists(filename, loadVerts(filename))
 	local result = triangleVerts
 

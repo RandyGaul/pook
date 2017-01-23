@@ -1,4 +1,5 @@
 platforms = {}
+BLOCK_COLOR = {0, 1, 0}
 
 local function GenerateMesh(self)
 	if GeneratedMeshes["platform"] ~= nil then
@@ -16,7 +17,7 @@ local function GenerateMesh(self)
 		{1, -1, -1}		--H
 
 	PushMeshLua({C,B,A,C,A,D,H,C,D,H,D,G,H,G,F,G,E,F,B,F,
-		E,B,E,A,D,A,E,D,E,G,F,B,C,H,F,C}, "cube", {0, 1, 0})
+		E,B,E,A,D,A,E,D,E,G,F,B,C,H,F,C}, "cube", BLOCK_COLOR)
 	GeneratedMeshes["platform"] = true
 end
 
@@ -36,6 +37,10 @@ local function Update(self)
 	AddCubeCollider(self.s.x, self.s.y, self.s.z, self.p.x, self.p.y, self.p.z)
 end
 
+function AddCollider(self)
+	AddCubeCollider( self.s.x, self.s.y, self.s.z, self.p.x, self.p.y, self.p.z )
+end
+
 function GeneratePlatform()
 	local platform = {}
 
@@ -45,6 +50,7 @@ function GeneratePlatform()
 	platform.GenerateMesh = GenerateMesh
 	platform.Render = Render
 	platform.Update = Update
+	platform.AddCollider = AddCollider
 
 	-- function platform.init() end
 	platform.Init = function(self, x, y, z, sx, sy, sz)
@@ -76,7 +82,6 @@ function GeneratePlatform()
 
 		local p = self.p
 		local s = self.s
-		AddCubeCollider( s.x, s.y, s.z, p.x, p.y, p.z )
 
 		table.insert(platforms, self) -- clean this up if we switch levels.
 	end

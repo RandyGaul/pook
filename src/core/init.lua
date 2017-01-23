@@ -5,10 +5,11 @@ s = math.sin
 c = math.cos
 world = {}
 math.randomseed(os.time())
-GRAVITY = 250
+GRAVITY = 150
 
 THE_COINS = {}
 THE_COIN_ID = 0
+NUM_REMAINING_COINS = 15
 
 THE_BOXES = {}
 THE_BOXES_ID = 0
@@ -17,10 +18,12 @@ function JumpHeight( height )
     return math.sqrt( 2 * GRAVITY * height )
 end
 
-cowPool = ObjectPooler(15, 50, 2, GenerateCow)
+ClearCubes();
+
+cowPool = ObjectPooler(NUM_REMAINING_COINS, 50, 2, GenerateCow)
 platformPool = ObjectPooler(33, 50, 2, GeneratePlatform)
 player = GeneratePlayer()
 
 skybox = GenerateSkybox()
 GenerateLevel(30)
-sharkPool = ObjectPooler(7, 7, 2, GenerateShark)
+sharkPool = ObjectPooler(6, 6, 2, GenerateShark)

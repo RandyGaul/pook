@@ -1,6 +1,7 @@
 SHARK_BASE_Y = -150
-SHARK_SPEED = 60
-SHARK_RADIUS = 2
+SHARK_SPEED = 38
+SHARK_RADIUS = 1
+sharks = {}
 
 function PlaceShark(self)
 	self.p.x = math.random(levelMinX, levelMaxX)
@@ -18,7 +19,7 @@ function GenerateShark()
 	shark.verts = ObjLoader.getVerts("assets/models/shark.obj")
 	shark.p = v3(0, 0, 0)
 	shark:PlaceShark()
-	shark.s = v3(.25, .25, .25)
+	shark.s = v3(2, 2, 2)
 	shark.jumpTarget = GetJumpTarget()
 	shark.velocity = SHARK_SPEED
 	shark.falling = false
@@ -35,7 +36,7 @@ function GenerateShark()
 	end
 
 	shark.Render = function(self)
-		PushInstance("simple", "shark", self.p.x, self.p.y, self.p.z, self.s.x, self.s.y, self.s.z, 1, 0, 0, 1.57)
+		PushInstance("simple", "shark", self.p.x, self.p.y, self.p.z, self.s.x, self.s.y, self.s.z, 1, 0, 0, 4.71239)
 	end
 
 	shark.Update = function(self)
