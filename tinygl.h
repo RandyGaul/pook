@@ -446,7 +446,7 @@ void tgSetShader( tgRenderable* r, tgShader* program )
 		TG_ASSERT( a );
 		TG_ASSERT( a->type == type );
 
-		a->location = i;
+		a->location = glGetAttribLocation(program->program, buffer);
 	}
 
 	// Generate VBOs and initialize fences
