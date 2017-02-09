@@ -348,7 +348,7 @@ int UpdateCam( lua_State *L )
 	LookAt(cam, eye, center, V3(0, 1, 0));
 	v3 dir = norm( sub( center, eye ) );
 	tgSetActiveShader( &simple );
-	tgSendF32( &simple, "u_eye", 1, (float*)&dir, 4 );
+	//tgSendF32( &simple, "u_eye", 1, (float*)&dir, 4 );
 	tgDeactivateShader( );
 	UpdateMvp();
 	return 0;
@@ -1290,12 +1290,12 @@ void HitWaveCB( )
 	if ( WAVE_DEBOUNCE ) return;
 	WAVE_DEBOUNCE = 1;
 	printf( "HIT THE WAVE. RESTARTING.\n" );
-	ResetGameState();
+	//ResetGameState();
 }
 
 int ResetGameFromLua( lua_State* L )
 {
-	ResetGameState();
+	//ResetGameState();
 	return 0;
 }
 
