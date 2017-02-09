@@ -1,7 +1,5 @@
 #version 410
 
-uniform vec4 u_eye;
-
 in vec4 v_pos;
 in vec4 v_col;
 in vec4 v_normal;
@@ -15,7 +13,6 @@ float Smooth( float x )
 
 void main( )
 {
-	out_color = u_eye;
 	out_color = v_pos;
 	out_color = v_col;
 	float d = v_normal.z;
