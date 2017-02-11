@@ -15,7 +15,6 @@
     <ClCompile Include="..\deps\glfw\win32_tls.c" />
     <ClCompile Include="..\deps\glfw\win32_window.c" />
     <ClCompile Include="..\deps\glfw\window.c" />
-    <ClCompile Include="..\deps\glfw\egl_context.c" />
     <ClCompile Include="..\deps\glfw\vulkan.c" />
     <ClCompile Include="..\deps\lua\lapi.c" />
     <ClCompile Include="..\deps\lua\lauxlib.c" />
@@ -51,6 +50,7 @@
     <ClCompile Include="..\deps\lua\lutf8lib.c" />
     <ClCompile Include="..\deps\lua\lvm.c" />
     <ClCompile Include="..\deps\lua\lzio.c" />
+    <ClCompile Include="..\deps\glfw\egl_context.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\deps\glad\glad.h" />
@@ -60,8 +60,6 @@
     <ClInclude Include="..\deps\glfw\win32_platform.h" />
     <ClInclude Include="..\deps\glfw\internal.h" />
     <ClInclude Include="..\deps\glfw\glfw_config.h" />
-    <ClInclude Include="..\deps\glfw\egl_context.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="..\tinygl.h" />
     <ClInclude Include="..\deps\lua\lapi.h" />
     <ClInclude Include="..\deps\lua\lauxlib.h" />

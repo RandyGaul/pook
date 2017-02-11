@@ -355,12 +355,12 @@ int UpdateCam( lua_State *L )
 }
 
 // make more generic. jk lol, this shit is gonna stay
-void UpdateTimeUniform(tgShader shader)
+void UpdateTimeUniform(tgShader* shader)
 {
 	float tf = t / GAME_DURATION;
-	tgSetActiveShader(&shader);
-	tgSendF32(&shader, "u_time", 1, &t, 1);
-	tgSendF32(&shader, "u_timeFraction", 1, &tf, 1);
+	tgSetActiveShader(shader);
+	tgSendF32(shader, "u_time", 1, &t, 1);
+	tgSendF32(shader, "u_timeFraction", 1, &tf, 1);
 	tgDeactivateShader();
 }
 
@@ -874,7 +874,7 @@ void AddRender( tgRenderable* render, const char* name )
 void SetUpRenderable(uint32_t primitiveType, const char* name, const char* vsPath, const char* psPath)
 {
 	tgVertexData vd;
-	tgMakeVertexData( &vd, 1024 * 1024, sizeof( Vertex ), primitiveType, GL_DYNAMIC_DRAW );
+	tgMakeVertexData( &vd, 1024 * 1024, primitiveType, sizeof( Vertex ), GL_DYNAMIC_DRAW );
 	tgAddAttribute( &vd, "a_pos", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, position ) );
 	tgAddAttribute( &vd, "a_col", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, color ) );
 	tgAddAttribute( &vd, "a_normal", 3, TG_FLOAT, TG_OFFSET_OF( Vertex, normal ) );
@@ -1428,10 +1428,10 @@ int main( )
 	gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress );
 	glfwSwapInterval( 1 );
 
-	// glfwGetFramebufferSize( window, &width, &height );
+	glfwGetFramebufferSize( window, &width, &height );
 	Reshape( window, width, height );
 
-	void* ctx = tgMakeCtx( 32 );
+	void* ctx = tgMakeCtx( 32, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_DEPTH_TEST );
 
 #if 1
 	glEnable( GL_CULL_FACE );
@@ -1439,11 +1439,6 @@ int main( )
 	glCullFace( GL_BACK );
 	glFrontFace( GL_CCW );
 #endif
-
-	// should happen in tinygl
-	GLuint vao;
-	glGenVertexArrays( 1, &vao );
-	glBindVertexArray( vao );
 
 	SetUpRenderable(GL_TRIANGLES, "simple", "./assets/shaders/simple.vs", "./assets/shaders/simple.ps");
 	//SetUpRenderable(GL_QUADS, "quads", "./assets/shaders/simple.vs", "./assets/shaders/simple.ps");
@@ -1459,20 +1454,18 @@ int main( )
 	InitWave( );
 	unsigned frame_count = 0;
 
-	tgFramebuffer fbo;
-	tgGenerateFramebuffer(&fbo, width, height);
 	tgShader postProcessShader;
 	char* vs = (char*)ReadFileToMemory( "./assets/shaders/postprocess.vs", 0 );
 	char* ps = (char*)ReadFileToMemory( "./assets/shaders/postprocess.ps", 0 );
 	tgLoadShader(&postProcessShader, vs, ps);
-	fbo.shader = postProcessShader;
+	tgFramebuffer fbo;
+	tgMakeFramebuffer(&fbo, &postProcessShader, width, height);
 
 	double time_accum = 0;
 	glClearColor( 0.0f, 0.35f, 1.0f, 1.0f );
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glfwPollEvents( );
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 		dt = ttTime( );
 		t += dt;
@@ -1508,7 +1501,6 @@ int main( )
 				call.verts = dc->verts;
 				call.vert_count = dc->count;
 				call.verts = dc->verts;
-				call.fbo = &fbo;
 				tgPushDrawCall( ctx, call );
 				dc->count = 0;
 			}
@@ -1520,7 +1512,7 @@ int main( )
 			// glfwSetCursorPos( window, 600, 600 );
 			mouse_moved = 0;
 		}
-		tgFlush( ctx, PookSwapBuffers );
+		tgFlush( ctx, PookSwapBuffers, &fbo );
 		TG_PRINT_GL_ERRORS( );
 		++frame_count;
 	}
